@@ -1,4 +1,5 @@
 
+<<<<<<< HEAD
 # CareFlow: Clinical Pathway Process Mining
 
 def main():
@@ -10,3 +11,14 @@ def main():
     
 if __name__ == "__main__":
     main()
+=======
+def project_status():
+    project_name = "Internship Demo"
+    status = "In Progress"
+
+    print("Project:", project_name)
+    print("Status:", status)
+    print("GitHub connection test successful!")
+
+project_status()
+>>>>>>> 7ad93e73b41467ff85789c05579f52d396a6e0dc
