@@ -1,82 +1,87 @@
 
+
 # CareFlow: Clinical Pathway Process Mining
 
 import pandas as pd
 from pathlib import Path
 
 
-def load_patient_dataset():
-    file_path = Path(__file__).parent / "patient_events.csv"
+BASE_DIR = Path(__file__).parent
+DATA_FILE = BASE_DIR / "patient_events.csv"
+CLEAN_FILE = BASE_DIR / "cleaned_patient_events.csv"
 
-    if not file_path.exists():
-        print("Error: patient_events.csv file not found!")
+
+def load_patient_dataset():
+    if CLEAN_FILE.exists():
+        df = pd.read_csv(CLEAN_FILE)
+        print("Loaded cleaned patient dataset.")
+    elif DATA_FILE.exists():
+        df = pd.read_csv(DATA_FILE)
+        print("Loaded original patient dataset.")
+    else:
+        print("Error: Patient dataset not found!")
         return None
 
-    df = pd.read_csv(file_path)
+    required = ["case_id", "activity", "timestamp"]
 
-    required_columns = ["case_id", "activity", "timestamp"]
-
-    if not all(column in df.columns for column in required_columns):
+    if not all(column in df.columns for column in required):
         print("Error: Required columns are missing!")
         return None
 
+    df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+    df = df.dropna(subset=required)
+    df = df.sort_values(["case_id", "timestamp"]).copy()
+
     return df
 
 
-def clean_patient_dataset(df):
-    print("\n--- DATA CLEANING REPORT ---")
-    print("Original records:", len(df))
+def analyze_waiting_time(df):
+    print("\n--- PATIENT WAITING-TIME ANALYSIS ---")
 
-    # Check missing values
-    print("\nMissing values before cleaning:")
-    print(df[["case_id", "activity", "timestamp"]].isnull().sum())
+    # Find the previous activity and timestamp for each patient
+    df["previous_activity"] = df.groupby("case_id")["activity"].shift(1)
+    df["previous_timestamp"] = df.groupby("case_id")["timestamp"].shift(1)
 
-    # Remove duplicate records
-    duplicate_count = df.duplicated().sum()
-    print("\nDuplicate records found:", duplicate_count)
-    df = df.drop_duplicates().copy()
+    # Calculate time between consecutive recorded activities
+    df["time_minutes"] = (
+        df["timestamp"] - df["previous_timestamp"]
+    ).dt.total_seconds() / 60
 
-    # Remove records missing essential information
-    df = df.dropna(subset=["case_id", "activity", "timestamp"]).copy()
+    transitions = df.dropna(subset=["previous_activity"]).copy()
 
-    # Convert timestamps and identify invalid values
-    df["timestamp"] = pd.to_datetime(
-        df["timestamp"], errors="coerce"
+    print("\nWaiting time for each patient:")
+    print(
+        transitions[
+            ["case_id", "previous_activity", "activity", "time_minutes"]
+        ].to_string(index=False)
     )
 
-    invalid_count = df["timestamp"].isna().sum()
-    print("Invalid timestamps found:", invalid_count)
+    print("\nAverage time between activities:")
+    summary = (
+        transitions.groupby(
+            ["previous_activity", "activity"]
+        )["time_minutes"]
+        .mean()
+        .reset_index()
+        .rename(columns={"time_minutes": "average_minutes"})
+    )
 
-    # Remove records with invalid timestamps
-    df = df.dropna(subset=["timestamp"]).copy()
+    print(summary.to_string(index=False))
 
-    # Arrange patient activities in chronological order
-    df = df.sort_values(
-        by=["case_id", "timestamp"]
-    ).reset_index(drop=True)
+    output_file = BASE_DIR / "waiting_time_analysis.csv"
+    transitions.to_csv(output_file, index=False)
+    summary.to_csv(BASE_DIR / "average_waiting_time.csv", index=False)
 
-    print("\nRecords after cleaning:", len(df))
-    print("Patients remaining:", df["case_id"].nunique())
-    print("\nCleaned dataset preview:")
-    print(df.head(10).to_string(index=False))
-
-    # Save cleaned dataset
-    output_path = Path(__file__).parent / "cleaned_patient_events.csv"
-    df.to_csv(output_path, index=False)
-
-    print("\nCleaned dataset saved to:", output_path.name)
-    return df
+    print("\nSaved detailed results:", output_file.name)
+    print("Saved summary: average_waiting_time.csv")
 
 
 def main():
     df = load_patient_dataset()
 
     if df is not None:
-        clean_patient_dataset(df)
+        analyze_waiting_time(df)
 
 
 if __name__ == "__main__":
     main()
-
-
-
