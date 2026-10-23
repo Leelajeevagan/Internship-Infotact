@@ -1,87 +1,75 @@
 
-
 # CareFlow: Clinical Pathway Process Mining
 
 import pandas as pd
 from pathlib import Path
 
-
 BASE_DIR = Path(__file__).parent
-DATA_FILE = BASE_DIR / "patient_events.csv"
 CLEAN_FILE = BASE_DIR / "cleaned_patient_events.csv"
+DATA_FILE = BASE_DIR / "patient_events.csv"
 
 
 def load_patient_dataset():
-    if CLEAN_FILE.exists():
-        df = pd.read_csv(CLEAN_FILE)
-        print("Loaded cleaned patient dataset.")
-    elif DATA_FILE.exists():
-        df = pd.read_csv(DATA_FILE)
-        print("Loaded original patient dataset.")
-    else:
+    file_path = CLEAN_FILE if CLEAN_FILE.exists() else DATA_FILE
+
+    if not file_path.exists():
         print("Error: Patient dataset not found!")
         return None
 
-    required = ["case_id", "activity", "timestamp"]
-
-    if not all(column in df.columns for column in required):
-        print("Error: Required columns are missing!")
-        return None
-
+    df = pd.read_csv(file_path)
     df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
-    df = df.dropna(subset=required)
-    df = df.sort_values(["case_id", "timestamp"]).copy()
+    df = df.dropna(subset=["case_id", "activity", "timestamp"])
+    df = df.sort_values(["case_id", "timestamp"])
 
+    print("Dataset loaded successfully!")
     return df
 
 
-def analyze_waiting_time(df):
-    print("\n--- PATIENT WAITING-TIME ANALYSIS ---")
+def analyze_patient_journeys(df):
+    print("\n--- PATIENT JOURNEY ANALYSIS ---")
 
-    # Find the previous activity and timestamp for each patient
-    df["previous_activity"] = df.groupby("case_id")["activity"].shift(1)
-    df["previous_timestamp"] = df.groupby("case_id")["timestamp"].shift(1)
+    journeys = (
+        df.groupby("case_id")
+        .agg(
+            total_activities=("activity", "count"),
+            journey=("activity", lambda activities: " -> ".join(activities)),
+            start_time=("timestamp", "min"),
+            end_time=("timestamp", "max")
+        )
+        .reset_index()
+    )
 
-    # Calculate time between consecutive recorded activities
-    df["time_minutes"] = (
-        df["timestamp"] - df["previous_timestamp"]
+    journeys["total_duration_minutes"] = (
+        journeys["end_time"] - journeys["start_time"]
     ).dt.total_seconds() / 60
 
-    transitions = df.dropna(subset=["previous_activity"]).copy()
+    print("\nIndividual Patient Journeys:")
+    print(journeys.to_string(index=False))
 
-    print("\nWaiting time for each patient:")
-    print(
-        transitions[
-            ["case_id", "previous_activity", "activity", "time_minutes"]
-        ].to_string(index=False)
+    pathway_summary = (
+        journeys.groupby("journey")
+        .size()
+        .reset_index(name="patient_count")
+        .sort_values("patient_count", ascending=False)
     )
 
-    print("\nAverage time between activities:")
-    summary = (
-        transitions.groupby(
-            ["previous_activity", "activity"]
-        )["time_minutes"]
-        .mean()
-        .reset_index()
-        .rename(columns={"time_minutes": "average_minutes"})
-    )
+    print("\nCommon Patient Pathways:")
+    print(pathway_summary.to_string(index=False))
 
-    print(summary.to_string(index=False))
+    journeys.to_csv(BASE_DIR / "patient_journey_analysis.csv", index=False)
+    pathway_summary.to_csv(BASE_DIR / "pathway_summary.csv", index=False)
 
-    output_file = BASE_DIR / "waiting_time_analysis.csv"
-    transitions.to_csv(output_file, index=False)
-    summary.to_csv(BASE_DIR / "average_waiting_time.csv", index=False)
-
-    print("\nSaved detailed results:", output_file.name)
-    print("Saved summary: average_waiting_time.csv")
+    print("\nSaved: patient_journey_analysis.csv")
+    print("Saved: pathway_summary.csv")
 
 
 def main():
     df = load_patient_dataset()
 
     if df is not None:
-        analyze_waiting_time(df)
+        analyze_patient_journeys(df)
 
 
 if __name__ == "__main__":
     main()
+

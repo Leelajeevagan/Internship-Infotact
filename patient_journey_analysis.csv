@@ -1,0 +1,7 @@
+case_id,total_activities,journey,start_time,end_time,total_duration_minutes
+P001,5,Registration -> Consultation -> Laboratory Test -> Treatment -> Discharge,2026-09-10 09:00:00,2026-09-10 11:00:00,120.0
+P002,5,Registration -> Consultation -> Laboratory Test -> Treatment -> Discharge,2026-09-10 09:10:00,2026-09-10 11:15:00,125.0
+P003,5,Registration -> Consultation -> Laboratory Test -> Treatment -> Discharge,2026-09-10 10:00:00,2026-09-10 11:45:00,105.0
+P004,5,Registration -> Consultation -> Laboratory Test -> Treatment -> Discharge,2026-09-11 08:45:00,2026-09-11 10:40:00,115.0
+P005,5,Registration -> Consultation -> Laboratory Test -> Treatment -> Discharge,2026-09-11 09:00:00,2026-09-11 11:20:00,140.0
+P006,5,Registration -> Consultation -> Laboratory Test -> Treatment -> Discharge,2026-09-11 10:15:00,2026-09-11 12:10:00,115.0
