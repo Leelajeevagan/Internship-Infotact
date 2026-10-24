@@ -1,0 +1,5 @@
+activity,next_activity,frequency
+Consultation,Laboratory Test,6
+Laboratory Test,Treatment,6
+Registration,Consultation,6
+Treatment,Discharge,6
