@@ -1,0 +1,7 @@
+case_id,expected_pathway,actual_pathway,pathway_status
+P001,Registration -> Consultation -> Laboratory Test -> Treatment -> Discharge,Registration -> Consultation -> Laboratory Test -> Treatment -> Discharge,Matches
+P002,Registration -> Consultation -> Laboratory Test -> Treatment -> Discharge,Registration -> Consultation -> Laboratory Test -> Treatment -> Discharge,Matches
+P003,Registration -> Consultation -> Laboratory Test -> Treatment -> Discharge,Registration -> Consultation -> Laboratory Test -> Treatment -> Discharge,Matches
+P004,Registration -> Consultation -> Laboratory Test -> Treatment -> Discharge,Registration -> Consultation -> Laboratory Test -> Treatment -> Discharge,Matches
+P005,Registration -> Consultation -> Laboratory Test -> Treatment -> Discharge,Registration -> Consultation -> Laboratory Test -> Treatment -> Discharge,Matches
+P006,Registration -> Consultation -> Laboratory Test -> Treatment -> Discharge,Registration -> Consultation -> Laboratory Test -> Treatment -> Discharge,Matches
