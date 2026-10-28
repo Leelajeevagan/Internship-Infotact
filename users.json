@@ -1,0 +1,42 @@
+[
+  {
+    "username": "doctor",
+    "full_name": "Dr. Sarah Jenkins, MD",
+    "role": "Attending Physician",
+    "department": "Emergency & Internal Medicine",
+    "avatar": "\ud83d\udc68\u200d\u2695\ufe0f",
+    "badge_color": "#0284C7",
+    "salt": "careflow_salt_doctor_2026",
+    "password_hash": "a97ce989abf4fe70f566a96de0dbde97befe86008dc35697f8feacf22e6e2717"
+  },
+  {
+    "username": "nurse",
+    "full_name": "Elena Vance, BSN, RN",
+    "role": "Triage & Care Coordinator",
+    "department": "Clinical Operations & Triage",
+    "avatar": "\ud83d\udc69\u200d\u2695\ufe0f",
+    "badge_color": "#059669",
+    "salt": "careflow_salt_nurse_2026",
+    "password_hash": "bd27c8de062b223d9e2bb6f3528c411a353d7318c0b54f190c04ddc27ce45d45"
+  },
+  {
+    "username": "admin",
+    "full_name": "Marcus Sterling",
+    "role": "Clinical Systems Administrator",
+    "department": "Hospital IT & Governance",
+    "avatar": "\ud83d\udee1\ufe0f",
+    "badge_color": "#4F46E5",
+    "salt": "careflow_salt_admin_2026",
+    "password_hash": "0cdf90717519f9d58e5d67162509c0e982b65661b6b27ca533f7e24e67adea7d"
+  },
+  {
+    "username": "analyst",
+    "full_name": "Alex Rivera",
+    "role": "Healthcare Quality Analyst",
+    "department": "Operations & Performance",
+    "avatar": "\ud83d\udcca",
+    "badge_color": "#D97706",
+    "salt": "careflow_salt_analyst_2026",
+    "password_hash": "2766c4adc6ee792786051a02027ead5ce170a8270a775ea35040d340ced782fa"
+  }
+]
