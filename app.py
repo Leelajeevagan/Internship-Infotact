@@ -5,6 +5,7 @@ from pathlib import Path
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
+import auth
 
 # ---------------------------------------------------------
 # Page Configuration & Metadata
@@ -314,6 +315,15 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
+# Authentication & Access Control
+# ---------------------------------------------------------
+auth.init_session_state()
+
+if not st.session_state.get("authenticated", False):
+    auth.render_login_page()
+    st.stop()
+
+# ---------------------------------------------------------
 # Data Loading & Preprocessing
 # ---------------------------------------------------------
 BASE_DIR = Path(__file__).parent
@@ -380,6 +390,8 @@ reverse_activity_labels = {v: k for k, v in activity_labels.items()}
 # Sidebar Controls & SLA Settings with Modern Icons
 # ---------------------------------------------------------
 with st.sidebar:
+    auth.render_user_sidebar()
+    st.divider()
     st.markdown("""
     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
         <div style="background: linear-gradient(135deg, #0284C7, #4F46E5); width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);">
@@ -424,11 +436,16 @@ with st.sidebar:
 # ---------------------------------------------------------
 # Hero Banner
 # ---------------------------------------------------------
+auth.render_user_header()
+
+current_user = st.session_state.get("user", {})
+user_greeting = f"{current_user.get('avatar', '👤')} Signed in as {current_user.get('full_name', 'Clinician')} • {current_user.get('role', 'Staff')}" if current_user else "Live Clinical Intelligence System"
+
 st.markdown(f"""
 <div class="hero-banner">
     <div class="hero-tag">
         <span class="pulse-dot"></span>
-        Live Clinical Intelligence System
+        {user_greeting}
     </div>
     <h1 class="hero-title">CareFlow™ Clinical Pathway Intelligence</h1>
     <p class="hero-subtitle">
