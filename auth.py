@@ -169,14 +169,38 @@ def logout():
 
 def render_login_page():
     """Render the full clinical portal sign-in experience."""
-    # Hide sidebar when logged out
+    # Hide sidebar, header, stop & deploy buttons on login page
     st.markdown("""
     <style>
-        [data-testid="stSidebar"] {
+        [data-testid="stSidebar"],
+        [data-testid="collapsedControl"],
+        [data-testid="stAppDeployButton"],
+        .stDeployButton,
+        [data-testid="stStatusWidget"],
+        .stStatusWidget,
+        [data-testid="stToolbarActions"],
+        [data-testid="stToolbar"],
+        [data-testid="StyledFullScreenButton"],
+        button[title="View fullscreen"],
+        #MainMenu,
+        [data-testid="stDecoration"],
+        footer {
             display: none !important;
+            visibility: hidden !important;
+            width: 0 !important;
+            height: 0 !important;
+            opacity: 0 !important;
         }
-        [data-testid="collapsedControl"] {
-            display: none !important;
+        header[data-testid="stHeader"],
+        .stAppHeader {
+            background: transparent !important;
+            height: 0px !important;
+            min-height: 0px !important;
+            padding: 0 !important;
+            border: none !important;
+        }
+        .block-container {
+            padding-top: 2rem !important;
         }
         .login-wrapper {
             max-width: 520px;
@@ -356,26 +380,33 @@ def render_user_sidebar():
     </div>
     """, unsafe_allow_html=True)
 
-    if st.sidebar.button("🚪 Sign Out", key="sidebar_signout_btn", use_container_width=True, type="secondary"):
-        logout()
-
 
 def render_user_header():
-    """Render a top profile status chip with instant sign-out in the main container."""
+    """Render a clean top profile status chip with single sign-out button in the main container."""
     user = st.session_state.get("user")
     if not user:
         return
 
-    col_space, col_user = st.columns([2.5, 1.5])
+    col_brand, col_user = st.columns([2.0, 2.0])
+    with col_brand:
+        st.markdown("""
+        <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+            <span style="display: inline-block; width: 8px; height: 8px; background: #10B981; border-radius: 50%;"></span>
+            <span style="font-size: 0.82rem; font-weight: 700; color: #0284C7; letter-spacing: 0.02em;">CAREFLOW INTELLIGENCE PORTAL</span>
+            <span style="font-size: 0.75rem; color: #CBD5E1;">•</span>
+            <span style="font-size: 0.75rem; color: #64748B;">Clinical Operations & Intelligence</span>
+        </div>
+        """, unsafe_allow_html=True)
+
     with col_user:
-        c1, c2 = st.columns([2.5, 1])
-        with c1:
+        c_prof, c_btn = st.columns([2.3, 1.0])
+        with c_prof:
             st.markdown(f"""
             <div style="text-align: right; line-height: 1.25; margin-top: 4px;">
-                <span style="font-size: 0.82rem; font-weight: 700; color: #0F172A;">{user.get('avatar', '👤')} {user.get('full_name')}</span><br>
-                <span style="font-size: 0.7rem; color: {user.get('badge_color', '#0284C7')}; font-weight: 600;">{user.get('role')}</span>
+                <span style="font-size: 0.84rem; font-weight: 700; color: #0F172A;">{user.get('avatar', '👤')} {user.get('full_name')}</span><br>
+                <span style="font-size: 0.72rem; color: {user.get('badge_color', '#0284C7')}; font-weight: 600;">{user.get('role')}</span>
             </div>
             """, unsafe_allow_html=True)
-        with c2:
-            if st.button("Sign Out", key="top_signout_btn", use_container_width=True, type="secondary"):
+        with c_btn:
+            if st.button("Sign Out", key="single_signout_btn", use_container_width=True, type="secondary"):
                 logout()
