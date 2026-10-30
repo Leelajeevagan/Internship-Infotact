@@ -38,5 +38,16 @@
     "badge_color": "#D97706",
     "salt": "careflow_salt_analyst_2026",
     "password_hash": "2766c4adc6ee792786051a02027ead5ce170a8270a775ea35040d340ced782fa"
+  },
+  {
+    "username": "reena",
+    "full_name": "Dr. Reena",
+    "role": "Medical Resident",
+    "department": "General Emergency",
+    "avatar": "\ud83e\ude7a",
+    "badge_color": "#0284C7",
+    "salt": "d052fab92f7158837e9015afefcaeae8",
+    "password_hash": "395607a51631075cc7a43edf5b78f808b72a51a40388f16cb72e6a15cdbeefba",
+    "created_at": "2026-10-30 09:27"
   }
 ]
