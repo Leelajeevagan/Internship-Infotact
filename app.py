@@ -5,7 +5,9 @@ from pathlib import Path
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
+import importlib
 import auth
+importlib.reload(auth)
 
 # ---------------------------------------------------------
 # Page Configuration & Metadata
@@ -45,6 +47,80 @@ st.markdown("""
 
     html, body, [class*="css"] {
         font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* =========================================================
+       Header & Toolbar Controls Removal
+       ========================================================= */
+
+    /* Completely hide Streamlit Deploy & Stop buttons, Status Widget, Toolbar, Fullscreen buttons & toolbars */
+    [data-testid="stAppDeployButton"],
+    .stDeployButton,
+    [data-testid="stStatusWidget"],
+    .stStatusWidget,
+    [data-testid="stToolbarActions"],
+    [data-testid="stToolbar"],
+    [data-testid="StyledFullScreenButton"],
+    button[title*="fullscreen" i],
+    button[aria-label*="fullscreen" i],
+    button[title*="Full screen" i],
+    button[aria-label*="Full screen" i],
+    #fullscreen-toggle-btn,
+    .modebar-container,
+    #MainMenu,
+    [data-testid="stDecoration"],
+    footer {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        height: 0 !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+
+    /* Ensure chart and table frames display normally */
+    [data-testid="stFullScreenFrame"] {
+        display: block !important;
+        visibility: visible !important;
+        width: 100% !important;
+        height: auto !important;
+        opacity: 1 !important;
+    }
+
+    /* Collapse Streamlit header blank space to 0 so content starts at very top */
+    header[data-testid="stHeader"],
+    .stAppHeader {
+        background: transparent !important;
+        height: 0px !important;
+        min-height: 0px !important;
+        padding: 0 !important;
+        border: none !important;
+    }
+
+    /* Keep sidebar toggle button accessible and stylish when collapsed */
+    [data-testid="collapsedControl"] {
+        display: flex !important;
+        visibility: visible !important;
+        position: fixed !important;
+        top: 14px !important;
+        left: 14px !important;
+        z-index: 999999 !important;
+        background: #FFFFFF !important;
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 10px !important;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08) !important;
+        padding: 4px !important;
+        transition: all 0.2s ease !important;
+    }
+    [data-testid="collapsedControl"]:hover {
+        background: #F0F9FF !important;
+        border-color: #38BDF8 !important;
+    }
+
+    /* Top container padding */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 3rem !important;
     }
 
     /* Main container background in crisp clean light mode */
@@ -387,8 +463,10 @@ activity_labels = {
 reverse_activity_labels = {v: k for k, v in activity_labels.items()}
 
 # ---------------------------------------------------------
-# Sidebar Controls & SLA Settings with Modern Icons
+# Sidebar Controls & Pathway Information with Modern Icons
 # ---------------------------------------------------------
+target_los = 120  # Standard clinical pathway benchmark (minutes)
+
 with st.sidebar:
     auth.render_user_sidebar()
     st.divider()
@@ -405,11 +483,6 @@ with st.sidebar:
         </div>
     </div>
     """, unsafe_allow_html=True)
-    
-    st.markdown("<p style='font-size: 0.75rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;'>🎯 Service Targets (SLA)</p>", unsafe_allow_html=True)
-    target_los = st.slider("Target Max Stay (mins)", min_value=60, max_value=180, value=120, step=10)
-    
-    st.divider()
     
     st.markdown("""
     <p style='font-size: 0.75rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;'>🧬 Pathway Hierarchy</p>
@@ -593,7 +666,7 @@ with kpi_col2:
 
 with kpi_col3:
     status_class = "kpi-badge-teal" if avg_los <= target_los else "kpi-badge-rose"
-    status_text = "Within SLA Target" if avg_los <= target_los else f"Exceeds SLA (+{avg_los - target_los:.1f}m)"
+    status_text = "Optimal Pathway Dwell" if avg_los <= target_los else f"Extended Flow (+{avg_los - target_los:.1f}m)"
     st.markdown(f"""
     <div class="glass-card">
         <div class="kpi-title">⏳ Average Length of Stay</div>
@@ -641,164 +714,100 @@ with tab_flow:
     """, unsafe_allow_html=True)
     
     with st.container(border=True):
-        col_hdr1, col_hdr2 = st.columns([2.5, 1.5])
-        with col_hdr1:
-            st.markdown("""
-            <div style="font-weight: 700; font-size: 1.05rem; color: #0F172A;">
-                🧭 Sequential Patient Flow Transition Diagram (Process Map)
-            </div>
-            <div style="font-size: 0.82rem; color: #64748B;">
-                Horizontal clinical pathway map showing transition wait times, throughput volume, and stage bottlenecks.
-            </div>
-            """, unsafe_allow_html=True)
-        with col_hdr2:
-            graph_type = st.radio(
-                "Visualization Style",
-                ["🗺️ Directed Flow Pipeline", "🌊 Sankey Flow Diagram"],
-                horizontal=True,
-                label_visibility="collapsed"
-            )
+        st.markdown("""
+        <div style="font-weight: 700; font-size: 1.05rem; color: #0F172A;">
+            🧭 Sequential Patient Flow Transition Diagram (Process Map)
+        </div>
+        <div style="font-size: 0.82rem; color: #64748B; margin-bottom: 12px;">
+            Horizontal clinical pathway map showing transition wait times, throughput volume, and stage bottlenecks.
+        </div>
+        """, unsafe_allow_html=True)
             
         if not transitions_df.empty:
-            if graph_type == "🗺️ Directed Flow Pipeline":
-                fig_flow = go.Figure()
-                
-                active_stages = [act for act in all_activities if act in filtered_df["activity"].unique()]
-                n_stages = len(active_stages)
-                x_coords = list(range(1, n_stages + 1))
-                y_coords = [0] * n_stages
-                
-                step_idx = {act: i for i, act in enumerate(active_stages)}
-                max_wait = transitions_df["avg_wait"].max()
-                
-                for row in transitions_df.itertuples():
-                    if row.activity in step_idx and row.next_activity in step_idx:
-                        s_idx = step_idx[row.activity]
-                        t_idx = step_idx[row.next_activity]
-                        
-                        is_crit = (row.avg_wait == max_wait)
-                        arrow_col = "#E11D48" if is_crit else "#0284C7"
-                        bg_badge = "#FFE4E6" if is_crit else "#F1F5F9"
-                        border_col = "#FDA4AF" if is_crit else "#CBD5E1"
-                        font_col = "#BE123C" if is_crit else "#0F172A"
-                        label_txt = f"<b>{row.avg_wait:.1f}m</b><br><span style='font-size:9px;'>{row.count} pts</span>"
-                        if is_crit:
-                            label_txt += "<br><span style='font-size:8px; font-weight:700;'>🚨 Bottleneck</span>"
-                        
-                        fig_flow.add_annotation(
-                            x=x_coords[t_idx] - 0.22,
-                            y=0,
-                            ax=x_coords[s_idx] + 0.22,
-                            ay=0,
-                            xref="x",
-                            yref="y",
-                            axref="x",
-                            ayref="y",
-                            showarrow=True,
-                            arrowhead=3,
-                            arrowsize=1.6,
-                            arrowwidth=3.5,
-                            arrowcolor=arrow_col,
-                            text=label_txt,
-                            font=dict(size=11, color=font_col, family="Plus Jakarta Sans"),
-                            bgcolor=bg_badge,
-                            bordercolor=border_col,
-                            borderwidth=1.5,
-                            borderpad=6
-                        )
-                
-                for i, act in enumerate(active_stages):
-                    meta = STAGE_METADATA.get(act, {"step": i+1, "icon": "📍", "color": "#0284C7"})
-                    pt_count = filtered_df[filtered_df["activity"] == act]["case_id"].nunique()
+            fig_flow = go.Figure()
+            
+            active_stages = [act for act in all_activities if act in filtered_df["activity"].unique()]
+            n_stages = len(active_stages)
+            x_coords = list(range(1, n_stages + 1))
+            y_coords = [0] * n_stages
+            
+            step_idx = {act: i for i, act in enumerate(active_stages)}
+            max_wait = transitions_df["avg_wait"].max()
+            
+            for row in transitions_df.itertuples():
+                if row.activity in step_idx and row.next_activity in step_idx:
+                    s_idx = step_idx[row.activity]
+                    t_idx = step_idx[row.next_activity]
                     
-                    fig_flow.add_trace(go.Scatter(
-                        x=[x_coords[i]],
-                        y=[0],
-                        mode="markers+text",
-                        marker=dict(
-                            size=54,
-                            color=meta["color"],
-                            line=dict(color="#FFFFFF", width=3)
-                        ),
-                        text=meta["icon"],
-                        textfont=dict(size=22),
-                        hoverinfo="text",
-                        hovertext=f"<b>Stage {meta['step']}: {act}</b><br>Patients Processed: {pt_count}<br>Adherence: 100%",
-                        showlegend=False
-                    ))
+                    is_crit = (row.avg_wait == max_wait)
+                    arrow_col = "#E11D48" if is_crit else "#0284C7"
+                    bg_badge = "#FFE4E6" if is_crit else "#F1F5F9"
+                    border_col = "#FDA4AF" if is_crit else "#CBD5E1"
+                    font_col = "#BE123C" if is_crit else "#0F172A"
+                    label_txt = f"<b>{row.avg_wait:.1f}m</b><br><span style='font-size:9px;'>{row.count} pts</span>"
+                    if is_crit:
+                        label_txt += "<br><span style='font-size:8px; font-weight:700;'>🚨 Bottleneck</span>"
                     
                     fig_flow.add_annotation(
-                        x=x_coords[i],
-                        y=-0.32,
-                        text=f"<b>Step {meta['step']}</b><br><span style='font-size:12px; font-weight:600;'>{act}</span>",
-                        showarrow=False,
-                        font=dict(size=11, color="#0F172A", family="Plus Jakarta Sans"),
-                        align="center"
+                        x=x_coords[t_idx] - 0.22,
+                        y=0,
+                        ax=x_coords[s_idx] + 0.22,
+                        ay=0,
+                        xref="x",
+                        yref="y",
+                        axref="x",
+                        ayref="y",
+                        showarrow=True,
+                        arrowhead=3,
+                        arrowsize=1.6,
+                        arrowwidth=3.5,
+                        arrowcolor=arrow_col,
+                        text=label_txt,
+                        font=dict(size=11, color=font_col, family="Plus Jakarta Sans"),
+                        bgcolor=bg_badge,
+                        bordercolor=border_col,
+                        borderwidth=1.5,
+                        borderpad=6
                     )
+            
+            for i, act in enumerate(active_stages):
+                meta = STAGE_METADATA.get(act, {"step": i+1, "icon": "📍", "color": "#0284C7"})
+                pt_count = filtered_df[filtered_df["activity"] == act]["case_id"].nunique()
                 
-                fig_flow.update_layout(
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    plot_bgcolor="#FFFFFF",
-                    xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[0.4, n_stages + 0.6]),
-                    yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-0.55, 0.45]),
-                    margin=dict(l=10, r=10, t=20, b=30),
-                    height=280
-                )
-                st.plotly_chart(fig_flow, use_container_width=True)
-                
-            else:
-                active_node_set = set(transitions_df["activity"]).union(set(transitions_df["next_activity"]))
-                all_nodes = [act for act in all_activities if act in active_node_set]
-                node_indices = {name: i for i, name in enumerate(all_nodes)}
-                node_colors = [activity_palette.get(name, "#0284C7") for name in all_nodes]
-                
-                n_nodes = len(all_nodes)
-                x_sankey = [0.01 + (i / max(1, n_nodes - 1)) * 0.98 for i in range(n_nodes)]
-                y_sankey = [0.5] * n_nodes
-                
-                source_indices = [node_indices[src] for src in transitions_df["activity"] if src in node_indices]
-                target_indices = [node_indices[tgt] for tgt in transitions_df["next_activity"] if tgt in node_indices]
-                values = transitions_df["count"].tolist()
-                link_hover = [
-                    f"<b>{src} ➔ {tgt}</b><br>Patient Throughput: {cnt} cases<br>Avg Transition Wait: {w:.1f} mins"
-                    for src, tgt, cnt, w in zip(
-                        transitions_df["activity"],
-                        transitions_df["next_activity"],
-                        transitions_df["count"],
-                        transitions_df["avg_wait"]
-                    )
-                ]
-                
-                fig_sankey = go.Figure(data=[go.Sankey(
-                    arrangement="fixed",
-                    node=dict(
-                        pad=28,
-                        thickness=24,
-                        line=dict(color="#CBD5E1", width=1.5),
-                        label=[f"{STAGE_METADATA.get(n, {}).get('icon', '')} {n}" for n in all_nodes],
-                        x=x_sankey,
-                        y=y_sankey,
-                        color=node_colors,
-                        hovertemplate="<b>%{label}</b><br>Throughput Volume: %{value} patients<extra></extra>"
+                fig_flow.add_trace(go.Scatter(
+                    x=[x_coords[i]],
+                    y=[0],
+                    mode="markers+text",
+                    marker=dict(
+                        size=54,
+                        color=meta["color"],
+                        line=dict(color="#FFFFFF", width=3)
                     ),
-                    link=dict(
-                        source=source_indices,
-                        target=target_indices,
-                        value=values,
-                        customdata=link_hover,
-                        hovertemplate="%{customdata}<extra></extra>",
-                        color=["rgba(2, 132, 199, 0.25)" for _ in values]
-                    )
-                )])
+                    text=meta["icon"],
+                    textfont=dict(size=22),
+                    hoverinfo="text",
+                    hovertext=f"<b>Stage {meta['step']}: {act}</b><br>Patients Processed: {pt_count}<br>Adherence: 100%",
+                    showlegend=False
+                ))
                 
-                fig_sankey.update_layout(
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(family="Plus Jakarta Sans, sans-serif", color="#0F172A", size=13),
-                    margin=dict(l=15, r=15, t=10, b=10),
-                    height=320
+                fig_flow.add_annotation(
+                    x=x_coords[i],
+                    y=-0.32,
+                    text=f"<b>Step {meta['step']}</b><br><span style='font-size:12px; font-weight:600;'>{act}</span>",
+                    showarrow=False,
+                    font=dict(size=11, color="#0F172A", family="Plus Jakarta Sans"),
+                    align="center"
                 )
-                st.plotly_chart(fig_sankey, use_container_width=True)
+            
+            fig_flow.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="#FFFFFF",
+                xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[0.4, n_stages + 0.6]),
+                yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-0.55, 0.45]),
+                margin=dict(l=10, r=10, t=20, b=30),
+                height=280
+            )
+            st.plotly_chart(fig_flow, use_container_width=True, config={"displayModeBar": False})
         else:
             st.info("No transitions match the current filter selection.")
     
@@ -839,7 +848,7 @@ with tab_flow:
                 height=290,
                 annotations=[dict(text=f"<b>{total_events}</b><br>Events", x=0.5, y=0.5, font_size=18, font_color="#0F172A", showarrow=False)]
             )
-            st.plotly_chart(fig_donut, use_container_width=True)
+            st.plotly_chart(fig_donut, use_container_width=True, config={"displayModeBar": False})
             
     with col_sub2:
         with st.container(border=True):
@@ -862,7 +871,7 @@ with tab_flow:
                     tgt_meta = STAGE_METADATA.get(row.next_activity, {"icon": "📍", "color": "#0284C7"})
                     
                     is_bottleneck = (row.avg_wait == transitions_df["avg_wait"].max())
-                    badge_html = '<span class="kpi-badge kpi-badge-rose" style="margin-top:0;">🚨 Bottleneck</span>' if is_bottleneck else '<span class="kpi-badge kpi-badge-teal" style="margin-top:0;">✓ On Target</span>'
+                    badge_html = '<span class="kpi-badge kpi-badge-rose" style="margin-top:0;">🚨 Bottleneck</span>' if is_bottleneck else '<span class="kpi-badge kpi-badge-teal" style="margin-top:0;">✓ Smooth Flow</span>'
                     
                     st.markdown(f"""
                     <div class="trans-item">
@@ -953,17 +962,6 @@ with tab_timeline:
                             customdata=act_subset[["activity", "time_str", "elapsed_minutes"]],
                             hovertemplate="<b>Patient:</b> %{y}<br><b>Milestone:</b> %{customdata[0]}<br><b>Elapsed Time:</b> T+%{customdata[2]:.0f} mins<br><b>Clock Time:</b> %{customdata[1]}<extra></extra>"
                         ))
-                
-                # Add SLA Target threshold line
-                fig_timeline.add_vline(
-                    x=target_los,
-                    line_width=2,
-                    line_dash="dash",
-                    line_color="#E11D48",
-                    annotation_text=f"🎯 Target SLA Max Stay: {target_los}m",
-                    annotation_position="top right",
-                    annotation_font=dict(color="#BE123C", size=11, family="Plus Jakarta Sans")
-                )
                 
                 fig_timeline.update_layout(
                     paper_bgcolor="rgba(0,0,0,0)",
@@ -1061,7 +1059,7 @@ with tab_timeline:
                     )
                 )
                 
-            st.plotly_chart(fig_timeline, use_container_width=True)
+            st.plotly_chart(fig_timeline, use_container_width=True, config={"displayModeBar": False})
         else:
             st.info("No timeline records match the current filters.")
             
@@ -1093,7 +1091,7 @@ with tab_timeline:
                 else:
                     longest_wait_str = "N/A"
                     
-                sla_badge = "✅ On Target" if dur_m <= target_los else f"⚠️ Exceeds SLA (+{dur_m - target_los:.0f}m)"
+                sla_badge = "✅ Standard Stay" if dur_m <= target_los else f"⚠️ Extended (+{dur_m - target_los:.0f}m)"
                 
                 summary_list.append({
                     "Patient Case": f"👤 {patient}",
@@ -1102,7 +1100,7 @@ with tab_timeline:
                     "Discharge": end_t.strftime("%H:%M"),
                     "Total Stay (mins)": f"{dur_m:.0f} min",
                     "Longest Interval": longest_wait_str,
-                    "SLA Performance": sla_badge
+                    "Journey Status": sla_badge
                 })
                 
             st.dataframe(
@@ -1165,7 +1163,7 @@ with tab_bottlenecks:
                     margin=dict(l=10, r=20, t=10, b=10),
                     height=340
                 )
-                st.plotly_chart(fig_bar, use_container_width=True)
+                st.plotly_chart(fig_bar, use_container_width=True, config={"displayModeBar": False})
             
         with col_b2:
             st.markdown("""
