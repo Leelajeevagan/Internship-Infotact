@@ -131,6 +131,25 @@ st.markdown("""
         color: #0F172A;
     }
 
+    /* Consistent readable text and controls in Light Mode */
+    .stApp,
+    [data-testid="stAppViewContainer"] {
+        color: #0F172A;
+    }
+    [data-testid="stWidgetLabel"],
+    [data-testid="stMarkdownContainer"],
+    [data-testid="stCaptionContainer"] {
+        color: #0F172A;
+    }
+    [data-testid="stTextInput"] input,
+    [data-testid="stTextArea"] textarea,
+    [data-testid="stNumberInput"] input,
+    [data-baseweb="select"] > div {
+        color: #0F172A !important;
+        background-color: #FFFFFF !important;
+        border-color: #CBD5E1 !important;
+    }
+
     /* Native Streamlit Bordered Container Styling */
     [data-testid="stVerticalBlockBorderWrapper"] > div {
         background: #FFFFFF !important;
