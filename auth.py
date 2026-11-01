@@ -149,6 +149,14 @@ def init_session_state():
         st.session_state["user"] = None
     if "login_time" not in st.session_state:
         st.session_state["login_time"] = None
+    if "theme_mode" not in st.session_state:
+        st.session_state["theme_mode"] = "light"
+    if "notifications_enabled" not in st.session_state:
+        st.session_state["notifications_enabled"] = True
+    if "unread_notifications_count" not in st.session_state:
+        st.session_state["unread_notifications_count"] = 3
+    if "notifications_acknowledged" not in st.session_state:
+        st.session_state["notifications_acknowledged"] = False
 
 
 def login(user_info):
@@ -168,7 +176,7 @@ def logout():
 
 
 def render_login_page():
-    """Render the full clinical portal sign-in experience."""
+    """Render the full clinical portal sign-in experience in dark mode."""
     # Hide sidebar, header, stop & deploy buttons on login page
     st.markdown("""
     <style>
@@ -202,6 +210,12 @@ def render_login_page():
         .block-container {
             padding-top: 2rem !important;
         }
+        .stApp {
+            background: radial-gradient(circle at 10% 10%, rgba(14, 165, 233, 0.05) 0%, transparent 40%),
+                        radial-gradient(circle at 90% 20%, rgba(99, 102, 241, 0.04) 0%, transparent 40%),
+                        #F8FAFC !important;
+            color: #0F172A !important;
+        }
         .login-wrapper {
             max-width: 520px;
             margin: 20px auto 40px auto;
@@ -212,7 +226,9 @@ def render_login_page():
             padding: 32px 28px 28px 28px;
             text-align: center;
             color: #FFFFFF;
-            box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.35);
+            box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.3);
+            border: 1px solid #E2E8F0;
+            border-bottom: none;
         }
         .login-body-card {
             background: #FFFFFF;
@@ -221,6 +237,7 @@ def render_login_page():
             border-radius: 0 0 20px 20px;
             padding: 28px 28px 24px 28px;
             box-shadow: 0 16px 32px -8px rgba(15, 23, 42, 0.08);
+            color: #0F172A;
         }
         .demo-pill-card {
             background: #F8FAFC;
@@ -229,11 +246,30 @@ def render_login_page():
             padding: 12px 14px;
             margin-bottom: 10px;
             transition: all 0.2s ease;
+            color: #0F172A;
         }
         .demo-pill-card:hover {
-            border-color: #38BDF8;
+            border-color: #0284C7;
             background: #F0F9FF;
             transform: translateY(-1px);
+        }
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 8px;
+            background-color: #F1F5F9 !important;
+            padding: 6px;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0 !important;
+            margin-bottom: 16px;
+        }
+        .stTabs [data-baseweb="tab"] {
+            color: #64748B !important;
+            font-weight: 600;
+        }
+        .stTabs [aria-selected="true"] {
+            background: #FFFFFF !important;
+            color: #0284C7 !important;
+            border: 1px solid #CBD5E1 !important;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
         }
     </style>
     """, unsafe_allow_html=True)
@@ -301,7 +337,7 @@ def render_login_page():
                             <div style="font-size: 0.75rem; color: {u['badge_color']}; font-weight: 600;">
                                 {u['role']}
                             </div>
-                            <div style="font-size: 0.7rem; color: #94A3B8;">
+                            <div style="font-size: 0.7rem; color: #64748B;">
                                 User: <code>{u['username']}</code> | Pass: <code>{key}123</code>
                             </div>
                         </div>
@@ -358,14 +394,22 @@ def render_user_sidebar():
     if not user:
         return
 
+    is_dark = st.session_state.get("theme_mode", "dark") == "dark"
+    card_bg = "#111827" if is_dark else "#FFFFFF"
+    card_border = "#1E293B" if is_dark else "#E2E8F0"
+    text_color = "#F1F5F9" if is_dark else "#0F172A"
+    sub_color = "#94A3B8" if is_dark else "#64748B"
+    divider_color = "#1E293B" if is_dark else "#F1F5F9"
+    shadow = "0 2px 8px rgba(0, 0, 0, 0.4)" if is_dark else "0 2px 8px rgba(15, 23, 42, 0.04)"
+
     st.sidebar.markdown(f"""
-    <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);">
+    <div style="background: {card_bg}; border: 1px solid {card_border}; border-radius: 14px; padding: 14px; margin-bottom: 16px; box-shadow: {shadow};">
         <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 40px; height: 40px; border-radius: 10px; background: {user.get('badge_color', '#0284C7')}15; border: 1px solid {user.get('badge_color', '#0284C7')}30; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: {user.get('badge_color', '#0284C7')}20; border: 1px solid {user.get('badge_color', '#0284C7')}40; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
                 {user.get('avatar', '👤')}
             </div>
             <div style="flex: 1; min-width: 0;">
-                <div style="font-weight: 700; font-size: 0.88rem; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                <div style="font-weight: 700; font-size: 0.88rem; color: {text_color}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                     {user.get('full_name', 'Staff Member')}
                 </div>
                 <div style="font-size: 0.72rem; color: {user.get('badge_color', '#0284C7')}; font-weight: 600;">
@@ -373,7 +417,7 @@ def render_user_sidebar():
                 </div>
             </div>
         </div>
-        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #F1F5F9; display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: #94A3B8;">
+        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid {divider_color}; display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: {sub_color};">
             <span>Unit: {user.get('department', 'Care Unit')}</span>
             <span style="color: #10B981; font-weight: 600;">● Active</span>
         </div>
@@ -381,32 +425,268 @@ def render_user_sidebar():
     """, unsafe_allow_html=True)
 
 
+@st.dialog("🔔 CareFlow™ Clinical Pathway Alert Center", width="large")
+def show_clinical_alerts_dialog():
+    """Interactive Clinical Alert Center dialog where clicking any alert takes immediate action."""
+    st.markdown("""
+    <div style="font-size: 0.85rem; color: #64748B; margin-bottom: 14px;">
+        Real-time clinical triage warnings, SLA breach monitoring, and patient care milestones. 
+        Click any action button below to immediately investigate or dispatch clinical actions.
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Calculate active unacknowledged count
+    is_ack = st.session_state.get("notifications_acknowledged", False)
+    active_cnt = 0
+    if not st.session_state.get("p004_ack", False): active_cnt += 1
+    if not st.session_state.get("p002_ack", False): active_cnt += 1
+    if not st.session_state.get("p005_ack", False): active_cnt += 1
+    if not st.session_state.get("p006_ack", False): active_cnt += 1
+    if is_ack:
+        active_cnt = 0
+
+    # Master Toggle & Global Actions
+    c_tog, c_act_all = st.columns([2, 1.4])
+    with c_tog:
+        notif_enabled = st.toggle(
+            "🔔 Enable Live Pathway Notifications",
+            value=st.session_state.get("notifications_enabled", True),
+            key="dialog_notif_toggle"
+        )
+        if notif_enabled != st.session_state.get("notifications_enabled", True):
+            st.session_state["notifications_enabled"] = notif_enabled
+            st.rerun(scope="app")
+
+    with c_act_all:
+        if not is_ack and active_cnt > 0:
+            if st.button("✓ Acknowledge All", key="dlg_btn_ack_all", use_container_width=True):
+                st.session_state["notifications_acknowledged"] = True
+                st.session_state["p004_ack"] = True
+                st.session_state["p002_ack"] = True
+                st.session_state["p005_ack"] = True
+                st.session_state["p006_ack"] = True
+                st.session_state["unread_notifications_count"] = 0
+                st.session_state["toast_message"] = "✓ All active alerts marked as acknowledged."
+                st.rerun(scope="app")
+        else:
+            if st.button("🔄 Re-activate Alerts", key="dlg_btn_restore_all", use_container_width=True):
+                st.session_state["notifications_acknowledged"] = False
+                st.session_state["banner_dismissed"] = False
+                st.session_state["p004_ack"] = False
+                st.session_state["p002_ack"] = False
+                st.session_state["p005_ack"] = False
+                st.session_state["p006_ack"] = False
+                st.session_state["unread_notifications_count"] = 4
+                st.session_state["toast_message"] = "🔔 Clinical pathway alerts re-activated."
+                st.rerun(scope="app")
+
+    if not notif_enabled:
+        st.info("🔕 Live pathway notifications are currently muted. Toggle switch above to resume live monitoring.")
+        return
+
+    st.markdown("<hr style='margin: 10px 0 16px 0; border-color: #E2E8F0;'>", unsafe_allow_html=True)
+
+    # Alert 1: Critical Lab Bottleneck (Case P004)
+    with st.container(border=True):
+        col_icon, col_txt, col_btns = st.columns([0.4, 2.5, 1.5])
+        with col_icon:
+            st.markdown("<div style='font-size: 2rem; text-align: center; margin-top: 4px;'>🚨</div>", unsafe_allow_html=True)
+        with col_txt:
+            st.markdown("""
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #FFE4E6; color: #BE123C; padding: 3px 8px; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; border: 1px solid #FDA4AF;">CRITICAL BOTTLENECK</span>
+                <span style="font-size: 0.72rem; color: #64748B;">Just now</span>
+            </div>
+            <div style="font-weight: 700; font-size: 0.96rem; color: #0F172A; margin: 4px 0 2px 0;">
+                Laboratory Test ➔ Treatment Delay (Patient Case P004)
+            </div>
+            <div style="font-size: 0.8rem; color: #475569; line-height: 1.4;">
+                Patient <strong>P004</strong> dwell time reached <strong>42 minutes</strong> (target SLA benchmark is 25m). Diagnostic verification is holding up physician treatment initiation.
+            </div>
+            """, unsafe_allow_html=True)
+            if st.session_state.get("p004_expedited", False):
+                st.markdown("<div style='margin-top: 6px; padding: 4px 8px; background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 6px; font-size: 0.75rem; color: #065F46; font-weight: 600;'>⚡ Priority Expedite Order #EXP-8842 Active</div>", unsafe_allow_html=True)
+            if st.session_state.get("p004_ack", False):
+                st.markdown("<div style='margin-top: 6px; padding: 4px 8px; background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 6px; font-size: 0.75rem; color: #475569; font-weight: 600;'>✓ Alert Acknowledged</div>", unsafe_allow_html=True)
+        with col_btns:
+            if st.button("🔍 Jump to Case P004", key="alert_btn_p004", use_container_width=True, type="primary"):
+                st.session_state["patient_multiselect_key"] = ["👤 Case P004"]
+                st.session_state["toast_message"] = "🔍 Dashboard filtered to Case P004 to investigate Lab Bottleneck!"
+                st.rerun(scope="app")
+            if st.button("⚡ Expedite Lab Result", key="alert_expedite_p004", use_container_width=True):
+                st.session_state["p004_expedited"] = True
+                st.toast("⚡ Urgent pathology expedite dispatched for Case P004!", icon="🚨")
+                st.rerun()
+            if not st.session_state.get("p004_ack", False):
+                if st.button("✓ Acknowledge", key="alert_ack_p004", use_container_width=True):
+                    st.session_state["p004_ack"] = True
+                    st.toast("✓ Alert for Case P004 acknowledged.", icon="✅")
+                    st.rerun()
+
+    # Alert 2: SLA Max Stay Warning (Case P002)
+    with st.container(border=True):
+        col_icon, col_txt, col_btns = st.columns([0.4, 2.5, 1.5])
+        with col_icon:
+            st.markdown("<div style='font-size: 2rem; text-align: center; margin-top: 4px;'>⚠️</div>", unsafe_allow_html=True)
+        with col_txt:
+            st.markdown("""
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #FEF3C7; color: #B45309; padding: 3px 8px; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; border: 1px solid #FDE68A;">SLA EXTENDED STAY</span>
+                <span style="font-size: 0.72rem; color: #64748B;">6m ago</span>
+            </div>
+            <div style="font-weight: 700; font-size: 0.96rem; color: #0F172A; margin: 4px 0 2px 0;">
+                Length of Stay Exceeded 120m Benchmark (Patient Case P002)
+            </div>
+            <div style="font-size: 0.8rem; color: #475569; line-height: 1.4;">
+                Patient <strong>P002</strong> total dwell stay reached <strong>140 minutes</strong> (+20m over 120m standard LOS). Care plan review recommended.
+            </div>
+            """, unsafe_allow_html=True)
+            if st.session_state.get("p002_review_ordered", False):
+                st.markdown("<div style='margin-top: 6px; padding: 4px 8px; background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 6px; font-size: 0.75rem; color: #065F46; font-weight: 600;'>📋 Discharge Coordinator Notified</div>", unsafe_allow_html=True)
+            if st.session_state.get("p002_ack", False):
+                st.markdown("<div style='margin-top: 6px; padding: 4px 8px; background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 6px; font-size: 0.75rem; color: #475569; font-weight: 600;'>✓ Alert Acknowledged</div>", unsafe_allow_html=True)
+        with col_btns:
+            if st.button("🔍 Jump to Case P002", key="alert_btn_p002", use_container_width=True, type="primary"):
+                st.session_state["patient_multiselect_key"] = ["👤 Case P002"]
+                st.session_state["toast_message"] = "🔍 Dashboard filtered to Patient P002 (Extended SLA Stay)!"
+                st.rerun(scope="app")
+            if st.button("📋 Discharge Check", key="alert_discharge_p002", use_container_width=True):
+                st.session_state["p002_review_ordered"] = True
+                st.toast("📋 Discharge coordinator notified for Patient P002 care plan!", icon="ℹ️")
+                st.rerun()
+            if not st.session_state.get("p002_ack", False):
+                if st.button("✓ Acknowledge", key="alert_ack_p002", use_container_width=True):
+                    st.session_state["p002_ack"] = True
+                    st.toast("✓ Alert for Case P002 acknowledged.", icon="✅")
+                    st.rerun()
+
+    # Alert 3: Clinical Milestone (Case P005)
+    with st.container(border=True):
+        col_icon, col_txt, col_btns = st.columns([0.4, 2.5, 1.5])
+        with col_icon:
+            st.markdown("<div style='font-size: 2rem; text-align: center; margin-top: 4px;'>🩺</div>", unsafe_allow_html=True)
+        with col_txt:
+            st.markdown("""
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #EEF2FF; color: #4338CA; padding: 3px 8px; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; border: 1px solid #C7D2FE;">PATHWAY MILESTONE</span>
+                <span style="font-size: 0.72rem; color: #64748B;">14m ago</span>
+            </div>
+            <div style="font-weight: 700; font-size: 0.96rem; color: #0F172A; margin: 4px 0 2px 0;">
+                Consultation Complete ➔ Diagnostic Orders Dispatched (Case P005)
+            </div>
+            <div style="font-size: 0.8rem; color: #475569; line-height: 1.4;">
+                Attending physician completed evaluation. Patient <strong>P005</strong> moving to Stage 3 (Laboratory Test).
+            </div>
+            """, unsafe_allow_html=True)
+            if st.session_state.get("p005_audit_ordered", False):
+                st.markdown("<div style='margin-top: 6px; padding: 4px 8px; background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 6px; font-size: 0.75rem; color: #065F46; font-weight: 600;'>🩺 Triage Trajectory Logged</div>", unsafe_allow_html=True)
+            if st.session_state.get("p005_ack", False):
+                st.markdown("<div style='margin-top: 6px; padding: 4px 8px; background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 6px; font-size: 0.75rem; color: #475569; font-weight: 600;'>✓ Milestone Acknowledged</div>", unsafe_allow_html=True)
+        with col_btns:
+            if st.button("🔍 Jump to Case P005", key="alert_btn_p005", use_container_width=True, type="primary"):
+                st.session_state["patient_multiselect_key"] = ["👤 Case P005"]
+                st.session_state["toast_message"] = "🔍 Showing Patient P005 consultation trajectory!"
+                st.rerun(scope="app")
+            if st.button("🩺 Triage Audit", key="alert_audit_p005", use_container_width=True):
+                st.session_state["p005_audit_ordered"] = True
+                st.toast("🩺 Clinical triage audit updated for Case P005.", icon="🩺")
+                st.rerun()
+            if not st.session_state.get("p005_ack", False):
+                if st.button("✓ Acknowledge", key="alert_ack_p005", use_container_width=True):
+                    st.session_state["p005_ack"] = True
+                    st.toast("✓ Milestone update acknowledged.", icon="✓")
+                    st.rerun()
+
+    # Alert 4: Fast-Track Trajectory (Case P006)
+    with st.container(border=True):
+        col_icon, col_txt, col_btns = st.columns([0.4, 2.5, 1.5])
+        with col_icon:
+            st.markdown("<div style='font-size: 2rem; text-align: center; margin-top: 4px;'>🚀</div>", unsafe_allow_html=True)
+        with col_txt:
+            st.markdown("""
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #F0FDF4; color: #15803D; padding: 3px 8px; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; border: 1px solid #86EFAC;">RAPID FLOW SUCCESS</span>
+                <span style="font-size: 0.72rem; color: #64748B;">22m ago</span>
+            </div>
+            <div style="font-weight: 700; font-size: 0.96rem; color: #0F172A; margin: 4px 0 2px 0;">
+                Fast-Track Pathway Achieved (Patient Case P006)
+            </div>
+            <div style="font-size: 0.8rem; color: #475569; line-height: 1.4;">
+                Patient <strong>P006</strong> completed Registration ➔ Consultation in <strong>15 minutes</strong> (benchmark 25m). Fast-track pathway efficiency record.
+            </div>
+            """, unsafe_allow_html=True)
+            if st.session_state.get("p006_ack", False):
+                st.markdown("<div style='margin-top: 6px; padding: 4px 8px; background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 6px; font-size: 0.75rem; color: #475569; font-weight: 600;'>✓ Alert Acknowledged</div>", unsafe_allow_html=True)
+        with col_btns:
+            if st.button("🔍 Jump to Case P006", key="alert_btn_p006", use_container_width=True, type="primary"):
+                st.session_state["patient_multiselect_key"] = ["👤 Case P006"]
+                st.session_state["toast_message"] = "🔍 Showing Patient P006 fast-track pathway!"
+                st.rerun(scope="app")
+            if not st.session_state.get("p006_ack", False):
+                if st.button("✓ Acknowledge", key="alert_ack_p006", use_container_width=True):
+                    st.session_state["p006_ack"] = True
+                    st.toast("✓ Fast-track notification acknowledged.", icon="✓")
+                    st.rerun()
+
+    # Quick action row at bottom
+    st.markdown("<hr style='margin: 14px 0; border-color: #E2E8F0;'>", unsafe_allow_html=True)
+    c_rst, c_test_tst = st.columns(2)
+    with c_rst:
+        all_pts = ["👤 Case P001", "👤 Case P002", "👤 Case P003", "👤 Case P004", "👤 Case P005", "👤 Case P006"]
+        if st.button("🔄 Reset View to All 6 Patients", key="alert_reset_all_pts", use_container_width=True):
+            st.session_state["patient_multiselect_key"] = all_pts
+            st.session_state["toast_message"] = "🔄 Cohort filter reset: Showing all 6 patients."
+            st.rerun(scope="app")
+    with c_test_tst:
+        if st.button("🔔 Send Test Push Notification", key="alert_send_test", use_container_width=True):
+            st.toast("🚨 Live Clinical Alert: Critical bottleneck detected on Patient P004!", icon="🔔")
+
+
 def render_user_header():
-    """Render a clean top profile status chip with single sign-out button in the main container."""
+    """Render a clean top profile status chip with interactive alert dialog button and sign-out in the main container."""
     user = st.session_state.get("user")
     if not user:
         return
 
-    col_brand, col_user = st.columns([2.0, 2.0])
+    is_dark = False
+    text_color = "#0F172A"
+    sub_color = "#64748B"
+    brand_dot_color = "#0284C7"
+
+    col_brand, col_user = st.columns([1.5, 2.5])
     with col_brand:
-        st.markdown("""
+        st.markdown(f"""
         <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
             <span style="display: inline-block; width: 8px; height: 8px; background: #10B981; border-radius: 50%;"></span>
-            <span style="font-size: 0.82rem; font-weight: 700; color: #0284C7; letter-spacing: 0.02em;">CAREFLOW INTELLIGENCE PORTAL</span>
-            <span style="font-size: 0.75rem; color: #CBD5E1;">•</span>
-            <span style="font-size: 0.75rem; color: #64748B;">Clinical Operations & Intelligence</span>
+            <span style="font-size: 0.82rem; font-weight: 700; color: {brand_dot_color}; letter-spacing: 0.02em;">CAREFLOW INTELLIGENCE PORTAL</span>
+            <span style="font-size: 0.75rem; color: {sub_color};">•</span>
+            <span style="font-size: 0.75rem; color: {sub_color};">Clinical Operations & Intelligence</span>
         </div>
         """, unsafe_allow_html=True)
 
     with col_user:
-        c_prof, c_btn = st.columns([2.3, 1.0])
+        c_prof, c_notif, c_btn = st.columns([1.7, 1.3, 1.0])
         with c_prof:
             st.markdown(f"""
             <div style="text-align: right; line-height: 1.25; margin-top: 4px;">
-                <span style="font-size: 0.84rem; font-weight: 700; color: #0F172A;">{user.get('avatar', '👤')} {user.get('full_name')}</span><br>
+                <span style="font-size: 0.84rem; font-weight: 700; color: {text_color};">{user.get('avatar', '👤')} {user.get('full_name')}</span><br>
                 <span style="font-size: 0.72rem; color: {user.get('badge_color', '#0284C7')}; font-weight: 600;">{user.get('role')}</span>
             </div>
             """, unsafe_allow_html=True)
+        with c_notif:
+            is_enabled = st.session_state.get("notifications_enabled", True)
+            is_ack = st.session_state.get("notifications_acknowledged", False)
+            active_cnt = 0
+            if not st.session_state.get("p004_ack", False): active_cnt += 1
+            if not st.session_state.get("p002_ack", False): active_cnt += 1
+            if not st.session_state.get("p005_ack", False): active_cnt += 1
+            if not st.session_state.get("p006_ack", False): active_cnt += 1
+            if is_ack:
+                active_cnt = 0
+            badge_str = f" ({active_cnt})" if (is_enabled and active_cnt > 0) else ""
+            alert_label = f"🔔 Alerts{badge_str}" if is_enabled else "🔕 Muted"
+            if st.button(alert_label, key="header_alerts_btn", use_container_width=True, help="Click to open Clinical Alerts Center"):
+                show_clinical_alerts_dialog()
         with c_btn:
             if st.button("Sign Out", key="single_signout_btn", use_container_width=True, type="secondary"):
                 logout()
