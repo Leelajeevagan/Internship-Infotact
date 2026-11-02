@@ -425,6 +425,19 @@ def render_user_sidebar():
     """, unsafe_allow_html=True)
 
 
+def jump_to_patient_case(case_id: str, reason: str = ""):
+    """Jump directly to a patient case file in Deep Dive, focus cohort filter, and sync tab."""
+    st.session_state["patient_cohort_select"] = f"👤 Case {case_id}"
+    st.session_state["patient_multiselect_key"] = [f"👤 Case {case_id}"]
+    st.session_state["dashboard_main_tabs"] = "👤 Patient Deep Dive"
+    st.session_state["patient_deep_dive_case_select"] = case_id
+    st.session_state["last_focused_patient"] = case_id
+    if reason:
+        st.session_state["toast_message"] = f"🔍 Jumped to Case {case_id} Dossier — {reason}"
+    else:
+        st.session_state["toast_message"] = f"🔍 Jumped to Case {case_id} Patient Deep Dive Dossier!"
+
+
 @st.dialog("🔔 CareFlow™ Clinical Pathway Alert Center", width="large")
 def show_clinical_alerts_dialog():
     """Interactive Clinical Alert Center dialog where clicking any alert takes immediate action."""
@@ -510,8 +523,7 @@ def show_clinical_alerts_dialog():
                 st.markdown("<div style='margin-top: 6px; padding: 4px 8px; background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 6px; font-size: 0.75rem; color: #475569; font-weight: 600;'>✓ Alert Acknowledged</div>", unsafe_allow_html=True)
         with col_btns:
             if st.button("🔍 Jump to Case P004", key="alert_btn_p004", use_container_width=True, type="primary"):
-                st.session_state["patient_multiselect_key"] = ["👤 Case P004"]
-                st.session_state["toast_message"] = "🔍 Dashboard filtered to Case P004 to investigate Lab Bottleneck!"
+                jump_to_patient_case("P004", "Investigating Critical Lab Bottleneck")
                 st.rerun(scope="app")
             if st.button("⚡ Expedite Lab Result", key="alert_expedite_p004", use_container_width=True):
                 st.session_state["p004_expedited"] = True
@@ -547,8 +559,7 @@ def show_clinical_alerts_dialog():
                 st.markdown("<div style='margin-top: 6px; padding: 4px 8px; background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 6px; font-size: 0.75rem; color: #475569; font-weight: 600;'>✓ Alert Acknowledged</div>", unsafe_allow_html=True)
         with col_btns:
             if st.button("🔍 Jump to Case P002", key="alert_btn_p002", use_container_width=True, type="primary"):
-                st.session_state["patient_multiselect_key"] = ["👤 Case P002"]
-                st.session_state["toast_message"] = "🔍 Dashboard filtered to Patient P002 (Extended SLA Stay)!"
+                jump_to_patient_case("P002", "Investigating SLA Extended Stay")
                 st.rerun(scope="app")
             if st.button("📋 Discharge Check", key="alert_discharge_p002", use_container_width=True):
                 st.session_state["p002_review_ordered"] = True
@@ -584,8 +595,7 @@ def show_clinical_alerts_dialog():
                 st.markdown("<div style='margin-top: 6px; padding: 4px 8px; background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 6px; font-size: 0.75rem; color: #475569; font-weight: 600;'>✓ Milestone Acknowledged</div>", unsafe_allow_html=True)
         with col_btns:
             if st.button("🔍 Jump to Case P005", key="alert_btn_p005", use_container_width=True, type="primary"):
-                st.session_state["patient_multiselect_key"] = ["👤 Case P005"]
-                st.session_state["toast_message"] = "🔍 Showing Patient P005 consultation trajectory!"
+                jump_to_patient_case("P005", "Reviewing Consultation Milestone")
                 st.rerun(scope="app")
             if st.button("🩺 Triage Audit", key="alert_audit_p005", use_container_width=True):
                 st.session_state["p005_audit_ordered"] = True
@@ -619,8 +629,7 @@ def show_clinical_alerts_dialog():
                 st.markdown("<div style='margin-top: 6px; padding: 4px 8px; background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 6px; font-size: 0.75rem; color: #475569; font-weight: 600;'>✓ Alert Acknowledged</div>", unsafe_allow_html=True)
         with col_btns:
             if st.button("🔍 Jump to Case P006", key="alert_btn_p006", use_container_width=True, type="primary"):
-                st.session_state["patient_multiselect_key"] = ["👤 Case P006"]
-                st.session_state["toast_message"] = "🔍 Showing Patient P006 fast-track pathway!"
+                jump_to_patient_case("P006", "Reviewing Rapid Flow Fast-Track Pathway")
                 st.rerun(scope="app")
             if not st.session_state.get("p006_ack", False):
                 if st.button("✓ Acknowledge", key="alert_ack_p006", use_container_width=True):
@@ -634,6 +643,7 @@ def show_clinical_alerts_dialog():
     with c_rst:
         all_pts = ["👤 Case P001", "👤 Case P002", "👤 Case P003", "👤 Case P004", "👤 Case P005", "👤 Case P006"]
         if st.button("🔄 Reset View to All 6 Patients", key="alert_reset_all_pts", use_container_width=True):
+            st.session_state["patient_cohort_select"] = "👥 All Patients (Cohort P001 - P006)"
             st.session_state["patient_multiselect_key"] = all_pts
             st.session_state["toast_message"] = "🔄 Cohort filter reset: Showing all 6 patients."
             st.rerun(scope="app")
