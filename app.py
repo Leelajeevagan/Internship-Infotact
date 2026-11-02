@@ -683,6 +683,23 @@ st.markdown(f"""
         color: #38BDF8 !important;
     }}
 
+    /* Primary Action Buttons */
+    [data-testid="stBaseButton-primary"] {{
+        background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%) !important;
+        color: #FFFFFF !important;
+        border: 1px solid {'#38BDF8' if is_dark else '#0284C7'} !important;
+        border-radius: 10px !important;
+        font-weight: 700 !important;
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25) !important;
+        transition: all 0.16s ease-in-out !important;
+    }}
+    [data-testid="stBaseButton-primary"]:hover {{
+        background: linear-gradient(135deg, #0369A1 0%, #075985 100%) !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 6px 18px rgba(2, 132, 199, 0.4) !important;
+        transform: translateY(-1px) !important;
+    }}
+
     /* Download Button */
     [data-testid="stDownloadButton"] > button {{
         background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%) !important;
@@ -853,8 +870,7 @@ if st.session_state.get("notifications_enabled", True) and not st.session_state.
             """, unsafe_allow_html=True)
         with col_b_jump:
             if st.button("🔍 Jump P004", key="banner_jump_p004", use_container_width=True, type="primary"):
-                st.session_state["patient_multiselect_key"] = ["👤 Case P004"]
-                st.session_state["toast_message"] = "🔍 Dashboard filtered to Case P004 to investigate Lab Bottleneck!"
+                auth.jump_to_patient_case("P004", "Investigating Critical Lab Bottleneck")
                 st.rerun()
         with col_b_expedite:
             if st.button("⚡ Expedite", key="banner_expedite_p004", use_container_width=True):
@@ -904,7 +920,7 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-filter_col1, filter_col2, filter_col3 = st.columns([1, 1.3, 1.7])
+filter_col1, filter_col2, filter_col3 = st.columns([1, 1.25, 1.45])
 
 with filter_col1:
     selected_date_str = st.selectbox(
@@ -915,26 +931,47 @@ with filter_col1:
     )
 
 with filter_col2:
-    patient_display_options = [f"👤 Case {p}" for p in all_patients]
-    if "patient_multiselect_key" not in st.session_state:
-        st.session_state["patient_multiselect_key"] = patient_display_options
-    selected_patient_displays = st.multiselect(
-        "👥 2. Patient Cohort (Sorted Cases)",
-        options=patient_display_options,
-        key="patient_multiselect_key",
-        help="Patients sorted in numerical case sequence (P001 - P006)"
+    ALL_PATIENTS_LABEL = "👥 All Patients (Cohort P001 - P006)"
+    patient_cohort_options = [ALL_PATIENTS_LABEL] + [f"👤 Case {p}" for p in all_patients]
+    
+    if "patient_cohort_select" not in st.session_state or st.session_state["patient_cohort_select"] not in patient_cohort_options:
+        st.session_state["patient_cohort_select"] = ALL_PATIENTS_LABEL
+
+    selected_patient_choice = st.selectbox(
+        "👥 2. Patient Cohort",
+        options=patient_cohort_options,
+        key="patient_cohort_select",
+        help="Select All Patients (Cohort P001 - P006) or an individual case to filter pathway analysis"
     )
-    selected_patients = [p.replace("👤 Case ", "") for p in selected_patient_displays]
+
+    if selected_patient_choice == ALL_PATIENTS_LABEL:
+        selected_patients = list(all_patients)
+    else:
+        selected_patients = [selected_patient_choice.replace("👤 Case ", "")]
 
 with filter_col3:
-    activity_display_options = [activity_labels[act] for act in all_activities]
-    selected_activity_displays = st.multiselect(
-        "🔄 3. Pathway Sequence (Steps 1 to 5)",
-        options=activity_display_options,
-        default=activity_display_options,
-        help="Activities strictly ordered by clinical pathway progression: Registration ➔ Consultation ➔ Lab ➔ Treatment ➔ Discharge"
+    ALL_ACTIVITIES_LABEL = "🔄 All Stages (Steps 1 to 5)"
+    pathway_options = [ALL_ACTIVITIES_LABEL] + [activity_labels[act] for act in all_activities]
+
+    if "pathway_stage_select" not in st.session_state or st.session_state["pathway_stage_select"] not in pathway_options:
+        st.session_state["pathway_stage_select"] = ALL_ACTIVITIES_LABEL
+
+    selected_activity_choice = st.selectbox(
+        "🔄 3. Pathway Sequence",
+        options=pathway_options,
+        key="pathway_stage_select",
+        help="Select All Stages (Steps 1 to 5) or an individual pathway stage to inspect transitions"
     )
-    selected_activities = [reverse_activity_labels[disp] for disp in selected_activity_displays]
+
+    if selected_activity_choice == ALL_ACTIVITIES_LABEL:
+        selected_activities = list(all_activities)
+    else:
+        selected_activities = [reverse_activity_labels[selected_activity_choice]]
+
+    if selected_activity_choice == ALL_ACTIVITIES_LABEL:
+        selected_activities = list(all_activities)
+    else:
+        selected_activities = [reverse_activity_labels[selected_activity_choice]]
 
 # Interactive visual sequential pipeline ribbon
 ribbon_html = '<div class="pathway-ribbon">'
@@ -982,7 +1019,7 @@ else:
 if len(selected_patients) == 1:
     focus_pid = selected_patients[0]
     with st.container(border=True):
-        col_focus_txt, col_focus_btn = st.columns([4.2, 1.2])
+        col_focus_txt, col_focus_goto, col_focus_btn = st.columns([3.2, 1.4, 1.2])
         with col_focus_txt:
             st.markdown(f"""
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -993,9 +1030,14 @@ if len(selected_patients) == 1:
                 </div>
             </div>
             """, unsafe_allow_html=True)
+        with col_focus_goto:
+            if st.button(f"👤 View Case {focus_pid} Dossier", key="goto_focus_dossier_btn", use_container_width=True, type="primary"):
+                st.session_state["dashboard_main_tabs"] = "👤 Patient Deep Dive"
+                st.session_state["patient_deep_dive_case_select"] = focus_pid
+                st.rerun()
         with col_focus_btn:
-            if st.button("🔄 Show All 6 Patients", key="reset_focus_patient_btn", use_container_width=True):
-                st.session_state["patient_multiselect_key"] = [f"👤 Case {p}" for p in all_patients]
+            if st.button("🔄 Show All Patients", key="reset_focus_patient_btn", use_container_width=True):
+                st.session_state["patient_cohort_select"] = "👥 All Patients (Cohort P001 - P006)"
                 st.session_state["toast_message"] = "🔄 Cohort filter reset: Showing all 6 patients."
                 st.rerun()
 
@@ -1084,15 +1126,26 @@ with kpi_col4:
 activity_palette = {act: STAGE_METADATA.get(act, {}).get("color", "#0284C7") for act in all_activities}
 
 # ---------------------------------------------------------
-# Tabs Navigation with Refreshed Modern Icons
+# Tabs Navigation with Synchronized Programmatic Switching
 # ---------------------------------------------------------
-tab_flow, tab_timeline, tab_bottlenecks, tab_explorer, tab_raw = st.tabs([
+TAB_LABELS = [
     "🧭 Process Flow & Mining",
     "📊 Patient Journey Timelines",
     "⚡ Bottleneck Analysis",
     "👤 Patient Deep Dive",
     "📑 Raw Event Log"
-])
+]
+
+default_active_tab = st.session_state.get("dashboard_main_tabs", TAB_LABELS[0])
+if default_active_tab not in TAB_LABELS:
+    default_active_tab = TAB_LABELS[0]
+
+tab_flow, tab_timeline, tab_bottlenecks, tab_explorer, tab_raw = st.tabs(
+    TAB_LABELS,
+    key="dashboard_main_tabs",
+    default=default_active_tab,
+    on_change="rerun"
+)
 
 # =========================================================
 # TAB 1: Process Flow & Mining (Proper Graph Layout)
@@ -1588,15 +1641,43 @@ with tab_explorer:
     <div class="section-subtitle">Examine individual patient clinical trajectories, milestone timestamps, and cumulative duration.</div>
     """, unsafe_allow_html=True)
     
-    default_patient_idx = 0
-    if len(selected_patients) == 1 and selected_patients[0] in all_patients:
-        default_patient_idx = all_patients.index(selected_patients[0])
+    # Synchronize selected patient case with session state
+    if "patient_deep_dive_case_select" not in st.session_state or st.session_state["patient_deep_dive_case_select"] not in all_patients:
+        if len(selected_patients) == 1 and selected_patients[0] in all_patients:
+            st.session_state["patient_deep_dive_case_select"] = selected_patients[0]
+        else:
+            st.session_state["patient_deep_dive_case_select"] = all_patients[0] if all_patients else "P001"
+
     selected_case = st.selectbox(
         "Select Patient Case File:",
         options=all_patients,
-        index=default_patient_idx,
+        key="patient_deep_dive_case_select",
         format_func=lambda x: f"👤 Case {x} — Patient Pathway Dossier"
     )
+
+    # Highlighted clinical alert contextual card if an active alert applies to this patient
+    if selected_case == "P004" and not st.session_state.get("p004_ack", False):
+        st.markdown("""
+        <div style="background: #FFE4E6; border: 1.5px solid #FDA4AF; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px;">
+            <div style="font-weight: 700; color: #9F1239; font-size: 0.95rem;">
+                🚨 Critical Clinical Bottleneck Alert: Laboratory Test ➔ Treatment Delay (Case P004)
+            </div>
+            <div style="color: #BE123C; font-size: 0.82rem; margin-top: 2px;">
+                Patient dwell time between Lab and Treatment reached <strong>42 minutes</strong> (target SLA benchmark 25m). Diagnostic verification is holding up physician treatment initiation.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    elif selected_case == "P002" and not st.session_state.get("p002_ack", False):
+        st.markdown("""
+        <div style="background: #FEF3C7; border: 1.5px solid #FDE68A; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px;">
+            <div style="font-weight: 700; color: #92400E; font-size: 0.95rem;">
+                ⚠️ SLA Alert: Extended Length of Stay Warning (Case P002)
+            </div>
+            <div style="color: #B45309; font-size: 0.82rem; margin-top: 2px;">
+                Total journey stay reached <strong>140 minutes</strong> (+20m beyond 120m target benchmark). Care plan review recommended.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
     
     patient_df = df[df["case_id"] == selected_case].sort_values("timestamp").reset_index(drop=True)
     
