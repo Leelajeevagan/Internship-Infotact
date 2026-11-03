@@ -821,17 +821,37 @@ with st.sidebar:
     """, unsafe_allow_html=True)
     
     st.markdown(f"""
-    <p style='font-size: 0.75rem; font-weight: 700; color: {T['text_muted']}; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;'>🧬 Pathway Hierarchy</p>
+    <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;'>
+        <span style='font-size: 0.75rem; font-weight: 700; color: {T['text_muted']}; text-transform: uppercase; letter-spacing: 0.08em;'>🧬 Pathway Hierarchy</span>
+        <span style='font-size: 0.68rem; color: #0284C7; font-weight: 600;'>Click to view stage</span>
+    </div>
     """, unsafe_allow_html=True)
-    
+
+    STAGE_NAV_MAPPING = {
+        act: f"{STAGE_METADATA.get(act, {}).get('icon', '📍')} {STAGE_METADATA.get(act, {}).get('step', i+1)}. {act}"
+        for i, act in enumerate(all_activities)
+    }
+
     for i, act in enumerate(all_activities, 1):
-        meta = STAGE_METADATA.get(act, {"icon": "📍", "color": "#0284C7"})
-        st.markdown(f"""
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.8rem; color: {T['text_secondary']};">
-            <span style="color: {meta['color']}; font-weight: 700;">{i}.</span>
-            <span>{meta['icon']} {act}</span>
-        </div>
-        """, unsafe_allow_html=True)
+        meta = STAGE_METADATA.get(act, {"icon": "📍", "color": "#0284C7", "step": i})
+        target_subtab = STAGE_NAV_MAPPING[act]
+        is_current_active = (
+            st.session_state.get("dashboard_main_tabs") == "🔬 Stage Intelligence" and
+            st.session_state.get("stage_subtabs") == target_subtab
+        )
+        btn_type = "primary" if is_current_active else "secondary"
+        if st.button(
+            f"{i}. {meta['icon']} {act}",
+            key=f"sidebar_hierarchy_btn_{act}",
+            use_container_width=True,
+            type=btn_type,
+            help=f"Navigate directly to {act} (Stage {i}) tab"
+        ):
+            st.session_state["dashboard_main_tabs"] = "🔬 Stage Intelligence"
+            st.session_state["stage_subtabs"] = target_subtab
+            st.session_state["pathway_stage_select"] = activity_labels.get(act, f"{i}. {meta['icon']} {act}")
+            st.session_state["toast_message"] = f"🔬 Navigated to Stage {i}: {act} Intelligence & Patient Flow!"
+            st.rerun()
         
     st.divider()
     notif_sidebar_label = "🔔 Live Alerts: Active" if st.session_state.get("notifications_enabled", True) else "🔕 Live Alerts: Muted"
@@ -994,6 +1014,21 @@ for i, act in enumerate(all_activities):
 
 ribbon_html += '</div>'
 st.markdown(ribbon_html, unsafe_allow_html=True)
+
+col_rib_lbl, col_r1, col_r2, col_r3, col_r4, col_r5 = st.columns([0.85, 1, 1, 1.15, 1, 1])
+with col_rib_lbl:
+    st.markdown(f"<div style='font-size: 0.76rem; font-weight: 700; color: {T['text_muted']}; text-transform: uppercase; margin-top: 8px;'>Jump to Stage:</div>", unsafe_allow_html=True)
+for col, act in zip([col_r1, col_r2, col_r3, col_r4, col_r5], all_activities):
+    with col:
+        m = STAGE_METADATA.get(act, {"icon": "📍", "step": 1})
+        is_sub_act = (st.session_state.get("dashboard_main_tabs") == "🔬 Stage Intelligence" and st.session_state.get("stage_subtabs") == f"{m['icon']} {m['step']}. {act}")
+        if st.button(f"{m['icon']} {act}", key=f"ribbon_jump_{act}", use_container_width=True, type="primary" if is_sub_act else "secondary", help=f"View {act} stage analytics"):
+            st.session_state["dashboard_main_tabs"] = "🔬 Stage Intelligence"
+            st.session_state["stage_subtabs"] = f"{m['icon']} {m['step']}. {act}"
+            st.session_state["pathway_stage_select"] = activity_labels.get(act, f"{m['step']}. {m['icon']} {act}")
+            st.session_state["toast_message"] = f"🔬 Navigated to Stage {m['step']}: {act} Intelligence Tab!"
+            st.rerun()
+
 st.markdown("</div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------
@@ -1132,6 +1167,7 @@ TAB_LABELS = [
     "🧭 Process Flow & Mining",
     "📊 Patient Journey Timelines",
     "⚡ Bottleneck Analysis",
+    "🔬 Stage Intelligence",
     "👤 Patient Deep Dive",
     "📑 Raw Event Log"
 ]
@@ -1140,7 +1176,7 @@ default_active_tab = st.session_state.get("dashboard_main_tabs", TAB_LABELS[0])
 if default_active_tab not in TAB_LABELS:
     default_active_tab = TAB_LABELS[0]
 
-tab_flow, tab_timeline, tab_bottlenecks, tab_explorer, tab_raw = st.tabs(
+tab_flow, tab_timeline, tab_bottlenecks, tab_stages, tab_explorer, tab_raw = st.tabs(
     TAB_LABELS,
     key="dashboard_main_tabs",
     default=default_active_tab,
@@ -1633,7 +1669,202 @@ with tab_bottlenecks:
         st.info("No transition records available.")
 
 # =========================================================
-# TAB 4: Individual Patient Deep Dive
+# TAB 4: Pathway Stage Intelligence & Throughput
+# =========================================================
+with tab_stages:
+    st.markdown("""
+    <div class="section-title">🔬 Clinical Pathway Stage Intelligence & Throughput</div>
+    <div class="section-subtitle">In-depth clinical audit, patient wait times, operational protocols, and SLA monitoring for each milestone stage.</div>
+    """, unsafe_allow_html=True)
+
+    STAGE_TAB_LABELS = [
+        f"{STAGE_METADATA[act]['icon']} {STAGE_METADATA[act]['step']}. {act}"
+        for act in all_activities
+    ]
+
+    default_stage_tab = st.session_state.get("stage_subtabs", STAGE_TAB_LABELS[0])
+    if default_stage_tab not in STAGE_TAB_LABELS:
+        default_stage_tab = STAGE_TAB_LABELS[0]
+
+    stage_containers = st.tabs(
+        STAGE_TAB_LABELS,
+        key="stage_subtabs",
+        default=default_stage_tab,
+        on_change="rerun"
+    )
+
+    STAGE_SLA_TARGETS = {
+        "Registration": {"sla": 20, "desc": "Patient intake, identity check, triage acuity assignment, and vital sign verification."},
+        "Consultation": {"sla": 25, "desc": "Physician evaluation, clinical examination, differential diagnosis, and diagnostic workup orders."},
+        "Laboratory Test": {"sla": 25, "desc": "Blood/specimen collection, pathology analysis, test verification, and physician notification."},
+        "Treatment": {"sla": 30, "desc": "Medication administration, therapeutic interventions, monitoring, and stabilization."},
+        "Discharge": {"sla": 30, "desc": "Final clinical review, discharge counseling, prescriptions, and home care coordination."}
+    }
+
+    for act, container in zip(all_activities, stage_containers):
+        with container:
+            meta = STAGE_METADATA.get(act, {"icon": "📍", "color": "#0284C7", "step": 1})
+            sla_info = STAGE_SLA_TARGETS.get(act, {"sla": 25, "desc": ""})
+            target_sla = sla_info["sla"]
+            
+            stage_events = df[df["activity"] == act].copy()
+            pt_count = stage_events["case_id"].nunique()
+            
+            # Dwell time stats to next activity
+            dwell_vals = stage_events["wait_minutes"].dropna()
+            avg_wait = dwell_vals.mean() if not dwell_vals.empty else 0
+            min_wait = dwell_vals.min() if not dwell_vals.empty else 0
+            max_wait = dwell_vals.max() if not dwell_vals.empty else 0
+            
+            is_delayed = (avg_wait > target_sla) if act != "Discharge" else False
+            status_text = "🚨 SLA Delay / Bottleneck" if is_delayed else ("🏁 Pathway Complete" if act == "Discharge" else "✅ On Target / Compliant")
+            status_badge_class = "kpi-badge-rose" if is_delayed else "kpi-badge-teal"
+
+            # Stage Header Card
+            st.markdown(f"""
+            <div class="glass-card" style="padding: 18px 22px; margin-bottom: 18px; border-left: 5px solid {meta['color']};">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 1.5rem;">{meta['icon']}</span>
+                            <span style="font-size: 1.25rem; font-weight: 800; color: {T['text']};">Stage {meta['step']}: {act}</span>
+                            <span class="kpi-badge {status_badge_class}" style="margin-top: 0;">{status_text}</span>
+                        </div>
+                        <div style="font-size: 0.84rem; color: {T['text_muted']}; margin-top: 4px; max-width: 850px;">
+                            {sla_info['desc']}
+                        </div>
+                    </div>
+                    <div style="text-align: right; background: {T['trans_bg']}; padding: 8px 14px; border-radius: 10px; border: 1px solid {T['trans_border']};">
+                        <div style="font-size: 0.72rem; color: {T['text_muted']}; font-weight: 600; text-transform: uppercase;">Benchmark SLA</div>
+                        <div style="font-size: 1.15rem; font-weight: 800; color: {meta['color']};">{target_sla} mins max</div>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Special Alert Card for Lab Bottleneck
+            if act == "Laboratory Test" and not st.session_state.get("p004_ack", False):
+                with st.container(border=True):
+                    c_alt_txt, c_alt_act = st.columns([4, 1.2])
+                    with c_alt_txt:
+                        st.markdown("""
+                        <div style="font-weight: 700; color: #9F1239; font-size: 0.95rem;">
+                            🚨 Critical Clinical Bottleneck Active at Stage 3: Laboratory Test
+                        </div>
+                        <div style="font-size: 0.82rem; color: #BE123C; margin-top: 2px;">
+                            Average turnaround is <strong>38.3 mins</strong> (+13.3 mins over 25m SLA). Case <strong>P004</strong> is experiencing the highest dwell delay (42m).
+                        </div>
+                        """, unsafe_allow_html=True)
+                    with c_alt_act:
+                        if not st.session_state.get("p004_expedited", False):
+                            if st.button("⚡ Expedite Lab Result", key="stage_tab_expedite_btn", use_container_width=True):
+                                st.session_state["p004_expedited"] = True
+                                st.toast("⚡ Urgent pathology expedite dispatched for Case P004!", icon="🚨")
+                                st.rerun()
+                        else:
+                            st.success("✓ Expedite Order Active")
+
+            # 4 KPI Cards for the Stage
+            col_s1, col_s2, col_s3, col_s4 = st.columns(4)
+            with col_s1:
+                st.markdown(f"""
+                <div class="glass-card" style="padding: 16px;">
+                    <div class="kpi-title">Total Patients Processed</div>
+                    <div class="kpi-value">{pt_count} <span style="font-size: 0.9rem; color: {T['text_muted']};">pts</span></div>
+                    <div style="font-size: 0.75rem; color: {T['text_secondary']}; margin-top: 4px;">100% Cohort Coverage</div>
+                </div>
+                """, unsafe_allow_html=True)
+            with col_s2:
+                dwell_display = f"{avg_wait:.1f} mins" if act != "Discharge" else "Terminal Step"
+                delta_str = f"+{(avg_wait - target_sla):.1f}m vs SLA" if (act != "Discharge" and avg_wait > target_sla) else "Within Target SLA"
+                delta_col = "#E11D48" if (act != "Discharge" and avg_wait > target_sla) else "#059669"
+                st.markdown(f"""
+                <div class="glass-card" style="padding: 16px;">
+                    <div class="kpi-title">Average Dwell / Processing Time</div>
+                    <div class="kpi-value">{dwell_display}</div>
+                    <div style="font-size: 0.75rem; color: {delta_col}; font-weight: 600; margin-top: 4px;">{delta_str}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            with col_s3:
+                range_str = f"{min_wait:.0f}m - {max_wait:.0f}m" if act != "Discharge" else "N/A"
+                st.markdown(f"""
+                <div class="glass-card" style="padding: 16px;">
+                    <div class="kpi-title">Observed Dwell Range</div>
+                    <div class="kpi-value" style="font-size: 1.45rem;">{range_str}</div>
+                    <div style="font-size: 0.75rem; color: {T['text_muted']}; margin-top: 4px;">Min to Max interval</div>
+                </div>
+                """, unsafe_allow_html=True)
+            with col_s4:
+                next_dest = stage_events["next_activity"].dropna().iloc[0] if (not stage_events["next_activity"].dropna().empty) else "Discharge Complete"
+                next_icon = STAGE_METADATA.get(next_dest, {}).get("icon", "🏁")
+                st.markdown(f"""
+                <div class="glass-card" style="padding: 16px;">
+                    <div class="kpi-title">Pathway Handoff Target</div>
+                    <div class="kpi-value" style="font-size: 1.15rem; color: {T['text']};">{next_icon} {next_dest}</div>
+                    <div style="font-size: 0.75rem; color: {T['text_muted']}; margin-top: 4px;">Sequential Transition</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # Patient table and bar chart for this stage
+            col_chart, col_tbl = st.columns([1.1, 1.2])
+            with col_chart:
+                with st.container(border=True):
+                    st.markdown(f"<div style='font-weight: 700; font-size: 0.92rem; color: {T['text']}; margin-bottom: 8px;'>📊 Patient Dwell Distribution (Stage {meta['step']})</div>", unsafe_allow_html=True)
+                    if act != "Discharge" and not dwell_vals.empty:
+                        plot_df = stage_events.dropna(subset=["wait_minutes"]).sort_values("case_id")
+                        bar_colors = ["#F43F5E" if w > target_sla else meta["color"] for w in plot_df["wait_minutes"]]
+                        fig_stage = go.Figure()
+                        fig_stage.add_trace(go.Bar(
+                            x=plot_df["case_id"],
+                            y=plot_df["wait_minutes"],
+                            marker=dict(color=bar_colors, line=dict(color=T['card_bg'], width=1.5)),
+                            text=[f"{w:.0f}m" for w in plot_df["wait_minutes"]],
+                            textposition="auto",
+                            name="Wait Time"
+                        ))
+                        fig_stage.add_hline(
+                            y=target_sla,
+                            line_dash="dash",
+                            line_color="#E11D48",
+                            annotation_text=f"SLA Target ({target_sla}m)",
+                            annotation_position="top right"
+                        )
+                        fig_stage.update_layout(
+                            height=290,
+                            margin=dict(l=10, r=10, t=25, b=10),
+                            plot_bgcolor="rgba(0,0,0,0)",
+                            paper_bgcolor="rgba(0,0,0,0)",
+                            font=dict(color=T['text_secondary'], family="Plus Jakarta Sans", size=11),
+                            yaxis=dict(title="Dwell Duration (mins)", gridcolor=T['grid_color']),
+                            xaxis=dict(title="Patient Case ID")
+                        )
+                        st.plotly_chart(fig_stage, use_container_width=True)
+                    else:
+                        st.info("Discharge is the final care pathway step. Total journey Length of Stay (LOS) applies.")
+
+            with col_tbl:
+                with st.container(border=True):
+                    st.markdown(f"<div style='font-weight: 700; font-size: 0.92rem; color: {T['text']}; margin-bottom: 8px;'>👥 Patient Journey Status at {act}</div>", unsafe_allow_html=True)
+                    table_rows = []
+                    for row in stage_events.itertuples():
+                        w = getattr(row, "wait_minutes", 0)
+                        if act == "Discharge":
+                            perf_tag = "🏁 Discharged"
+                        elif w > target_sla:
+                            perf_tag = f"🚨 Delayed (+{(w - target_sla):.0f}m)"
+                        else:
+                            perf_tag = f"✅ On Target ({w:.0f}m)"
+                        
+                        table_rows.append({
+                            "Patient Case": f"👤 Case {row.case_id}",
+                            "Timestamp": row.timestamp.strftime("%H:%M (%b %d)"),
+                            "Dwell to Next Step": f"{w:.0f} mins" if act != "Discharge" else "Complete",
+                            "SLA Performance": perf_tag
+                        })
+                    st.dataframe(pd.DataFrame(table_rows), use_container_width=True, hide_index=True)
+
+# =========================================================
+# TAB 5: Individual Patient Deep Dive
 # =========================================================
 with tab_explorer:
     st.markdown("""
