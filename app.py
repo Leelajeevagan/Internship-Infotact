@@ -31,8 +31,10 @@ if not st.session_state.get("authenticated", False):
 # ---------------------------------------------------------
 # Theme System & Dynamic Design Palette
 # ---------------------------------------------------------
-st.session_state["theme_mode"] = "light"
-is_dark = False
+if "theme_mode" not in st.session_state:
+    st.session_state["theme_mode"] = "light"
+
+is_dark = (st.session_state["theme_mode"] == "dark")
 
 THEMES = {
     "light": {
@@ -700,6 +702,208 @@ st.markdown(f"""
         transform: translateY(-1px) !important;
     }}
 
+    /* =========================================================
+       CLINICAL STAGE BACKGROUNDS (Pathway Hierarchy & Stage Buttons)
+       ========================================================= */
+
+    /* Pathway Hierarchy Sidebar Container Card */
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) > div {{
+        background: {'rgba(15, 23, 42, 0.75)' if is_dark else '#FFFFFF'} !important;
+        border: 1.5px solid {'#334155' if is_dark else '#E2E8F0'} !important;
+        border-radius: 16px !important;
+        padding: 14px 14px 10px 14px !important;
+        box-shadow: {T['card_shadow']} !important;
+        margin-bottom: 14px !important;
+    }}
+
+    /* Stage 1: Registration (Soft Sky Blue Background) */
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) [data-testid="stButton"]:nth-of-type(1) > button,
+    [data-testid="stButton"] > button[aria-label*="Registration"],
+    [data-testid="stButton"] > button[title*="Registration"] {{
+        background: {'rgba(2, 132, 199, 0.18)' if is_dark else '#E0F2FE'} !important;
+        border: 1.5px solid {'#0284C7' if is_dark else '#BAE6FD'} !important;
+        color: {'#7DD3FC' if is_dark else '#0369A1'} !important;
+        border-radius: 11px !important;
+        font-weight: 700 !important;
+        box-shadow: 0 2px 6px rgba(2, 132, 199, 0.1) !important;
+        transition: all 0.2s ease !important;
+    }}
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) [data-testid="stButton"]:nth-of-type(1) > button:hover,
+    [data-testid="stButton"] > button[aria-label*="Registration"]:hover,
+    [data-testid="stButton"] > button[title*="Registration"]:hover {{
+        background: {'rgba(2, 132, 199, 0.35)' if is_dark else '#BAE6FD'} !important;
+        border-color: #0284C7 !important;
+        color: {'#BAE6FD' if is_dark else '#0284C7'} !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25) !important;
+    }}
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) [data-testid="stButton"]:nth-of-type(1) > button[data-testid="stBaseButton-primary"],
+    [data-testid="stButton"] > button[data-testid="stBaseButton-primary"][aria-label*="Registration"],
+    [data-testid="stButton"] > button[data-testid="stBaseButton-primary"][title*="Registration"] {{
+        background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%) !important;
+        color: #FFFFFF !important;
+        border: 1.5px solid #38BDF8 !important;
+        box-shadow: 0 4px 16px rgba(2, 132, 199, 0.45) !important;
+    }}
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) [data-testid="stButton"]:nth-of-type(1) > button p,
+    [data-testid="stButton"] > button[aria-label*="Registration"] p,
+    [data-testid="stButton"] > button[title*="Registration"] p {{
+        color: inherit !important;
+        font-weight: 700 !important;
+    }}
+
+    /* Stage 2: Consultation (Soft Indigo Background) */
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) [data-testid="stButton"]:nth-of-type(2) > button,
+    [data-testid="stButton"] > button[aria-label*="Consultation"],
+    [data-testid="stButton"] > button[title*="Consultation"] {{
+        background: {'rgba(79, 70, 229, 0.18)' if is_dark else '#EEF2FF'} !important;
+        border: 1.5px solid {'#4F46E5' if is_dark else '#C7D2FE'} !important;
+        color: {'#A5B4FC' if is_dark else '#4338CA'} !important;
+        border-radius: 11px !important;
+        font-weight: 700 !important;
+        box-shadow: 0 2px 6px rgba(79, 70, 229, 0.1) !important;
+        transition: all 0.2s ease !important;
+    }}
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) [data-testid="stButton"]:nth-of-type(2) > button:hover,
+    [data-testid="stButton"] > button[aria-label*="Consultation"]:hover,
+    [data-testid="stButton"] > button[title*="Consultation"]:hover {{
+        background: {'rgba(79, 70, 229, 0.35)' if is_dark else '#E0E7FF'} !important;
+        border-color: #4F46E5 !important;
+        color: {'#C7D2FE' if is_dark else '#4F46E5'} !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25) !important;
+    }}
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) [data-testid="stButton"]:nth-of-type(2) > button[data-testid="stBaseButton-primary"],
+    [data-testid="stButton"] > button[data-testid="stBaseButton-primary"][aria-label*="Consultation"],
+    [data-testid="stButton"] > button[data-testid="stBaseButton-primary"][title*="Consultation"] {{
+        background: linear-gradient(135deg, #4F46E5 0%, #3730A3 100%) !important;
+        color: #FFFFFF !important;
+        border: 1.5px solid #818CF8 !important;
+        box-shadow: 0 4px 16px rgba(79, 70, 229, 0.45) !important;
+    }}
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) [data-testid="stButton"]:nth-of-type(2) > button p,
+    [data-testid="stButton"] > button[aria-label*="Consultation"] p,
+    [data-testid="stButton"] > button[title*="Consultation"] p {{
+        color: inherit !important;
+        font-weight: 700 !important;
+    }}
+
+    /* Stage 3: Laboratory Test (Soft Warm Amber Background) */
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) [data-testid="stButton"]:nth-of-type(3) > button,
+    [data-testid="stButton"] > button[aria-label*="Laboratory"],
+    [data-testid="stButton"] > button[aria-label*="Lab"],
+    [data-testid="stButton"] > button[title*="Laboratory"],
+    [data-testid="stButton"] > button[title*="Lab"] {{
+        background: {'rgba(217, 119, 6, 0.18)' if is_dark else '#FEF3C7'} !important;
+        border: 1.5px solid {'#D97706' if is_dark else '#FDE68A'} !important;
+        color: {'#FDE68A' if is_dark else '#92400E'} !important;
+        border-radius: 11px !important;
+        font-weight: 700 !important;
+        box-shadow: 0 2px 6px rgba(217, 119, 6, 0.1) !important;
+        transition: all 0.2s ease !important;
+    }}
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) [data-testid="stButton"]:nth-of-type(3) > button:hover,
+    [data-testid="stButton"] > button[aria-label*="Laboratory"]:hover,
+    [data-testid="stButton"] > button[aria-label*="Lab"]:hover,
+    [data-testid="stButton"] > button[title*="Laboratory"]:hover,
+    [data-testid="stButton"] > button[title*="Lab"]:hover {{
+        background: {'rgba(217, 119, 6, 0.35)' if is_dark else '#FDE68A'} !important;
+        border-color: #D97706 !important;
+        color: {'#FEF3C7' if is_dark else '#B45309'} !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25) !important;
+    }}
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) [data-testid="stButton"]:nth-of-type(3) > button[data-testid="stBaseButton-primary"],
+    [data-testid="stButton"] > button[data-testid="stBaseButton-primary"][aria-label*="Laboratory"],
+    [data-testid="stButton"] > button[data-testid="stBaseButton-primary"][aria-label*="Lab"],
+    [data-testid="stButton"] > button[data-testid="stBaseButton-primary"][title*="Laboratory"],
+    [data-testid="stButton"] > button[data-testid="stBaseButton-primary"][title*="Lab"] {{
+        background: linear-gradient(135deg, #D97706 0%, #B45309 100%) !important;
+        color: #FFFFFF !important;
+        border: 1.5px solid #FBBF24 !important;
+        box-shadow: 0 4px 16px rgba(217, 119, 6, 0.45) !important;
+    }}
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) [data-testid="stButton"]:nth-of-type(3) > button p,
+    [data-testid="stButton"] > button[aria-label*="Laboratory"] p,
+    [data-testid="stButton"] > button[aria-label*="Lab"] p,
+    [data-testid="stButton"] > button[title*="Laboratory"] p,
+    [data-testid="stButton"] > button[title*="Lab"] p {{
+        color: inherit !important;
+        font-weight: 700 !important;
+    }}
+
+    /* Stage 4: Treatment (Soft Clinical Rose Background) */
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) [data-testid="stButton"]:nth-of-type(4) > button,
+    [data-testid="stButton"] > button[aria-label*="Treatment"],
+    [data-testid="stButton"] > button[title*="Treatment"] {{
+        background: {'rgba(219, 39, 119, 0.18)' if is_dark else '#FCE7F3'} !important;
+        border: 1.5px solid {'#DB2777' if is_dark else '#FBCFE8'} !important;
+        color: {'#FBCFE8' if is_dark else '#9F1239'} !important;
+        border-radius: 11px !important;
+        font-weight: 700 !important;
+        box-shadow: 0 2px 6px rgba(219, 39, 119, 0.1) !important;
+        transition: all 0.2s ease !important;
+    }}
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) [data-testid="stButton"]:nth-of-type(4) > button:hover,
+    [data-testid="stButton"] > button[aria-label*="Treatment"]:hover,
+    [data-testid="stButton"] > button[title*="Treatment"]:hover {{
+        background: {'rgba(219, 39, 119, 0.35)' if is_dark else '#FBCFE8'} !important;
+        border-color: #DB2777 !important;
+        color: {'#FCE7F3' if is_dark else '#BE185D'} !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(219, 39, 119, 0.25) !important;
+    }}
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) [data-testid="stButton"]:nth-of-type(4) > button[data-testid="stBaseButton-primary"],
+    [data-testid="stButton"] > button[data-testid="stBaseButton-primary"][aria-label*="Treatment"],
+    [data-testid="stButton"] > button[data-testid="stBaseButton-primary"][title*="Treatment"] {{
+        background: linear-gradient(135deg, #DB2777 0%, #BE185D 100%) !important;
+        color: #FFFFFF !important;
+        border: 1.5px solid #F472B6 !important;
+        box-shadow: 0 4px 16px rgba(219, 39, 119, 0.45) !important;
+    }}
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) [data-testid="stButton"]:nth-of-type(4) > button p,
+    [data-testid="stButton"] > button[aria-label*="Treatment"] p,
+    [data-testid="stButton"] > button[title*="Treatment"] p {{
+        color: inherit !important;
+        font-weight: 700 !important;
+    }}
+
+    /* Stage 5: Discharge (Soft Mint Emerald Background) */
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) [data-testid="stButton"]:nth-of-type(5) > button,
+    [data-testid="stButton"] > button[aria-label*="Discharge"],
+    [data-testid="stButton"] > button[title*="Discharge"] {{
+        background: {'rgba(5, 150, 105, 0.18)' if is_dark else '#ECFDF5'} !important;
+        border: 1.5px solid {'#059669' if is_dark else '#A7F3D0'} !important;
+        color: {'#A7F3D0' if is_dark else '#065F46'} !important;
+        border-radius: 11px !important;
+        font-weight: 700 !important;
+        box-shadow: 0 2px 6px rgba(5, 150, 105, 0.1) !important;
+        transition: all 0.2s ease !important;
+    }}
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) [data-testid="stButton"]:nth-of-type(5) > button:hover,
+    [data-testid="stButton"] > button[aria-label*="Discharge"]:hover,
+    [data-testid="stButton"] > button[title*="Discharge"]:hover {{
+        background: {'rgba(5, 150, 105, 0.35)' if is_dark else '#D1FAE5'} !important;
+        border-color: #059669 !important;
+        color: {'#ECFDF5' if is_dark else '#047857'} !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25) !important;
+    }}
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) [data-testid="stButton"]:nth-of-type(5) > button[data-testid="stBaseButton-primary"],
+    [data-testid="stButton"] > button[data-testid="stBaseButton-primary"][aria-label*="Discharge"],
+    [data-testid="stButton"] > button[data-testid="stBaseButton-primary"][title*="Discharge"] {{
+        background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+        color: #FFFFFF !important;
+        border: 1.5px solid #34D399 !important;
+        box-shadow: 0 4px 16px rgba(5, 150, 105, 0.45) !important;
+    }}
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:has(#careflow-pathway-marker) [data-testid="stButton"]:nth-of-type(5) > button p,
+    [data-testid="stButton"] > button[aria-label*="Discharge"] p,
+    [data-testid="stButton"] > button[title*="Discharge"] p {{
+        color: inherit !important;
+        font-weight: 700 !important;
+    }}
+
     /* Download Button */
     [data-testid="stDownloadButton"] > button {{
         background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%) !important;
@@ -806,52 +1010,61 @@ target_los = 120  # Standard clinical pathway benchmark (minutes)
 with st.sidebar:
     auth.render_user_sidebar()
     st.divider()
-    st.markdown(f"""
-    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-        <div style="background: linear-gradient(135deg, #0284C7, #4F46E5); width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-            </svg>
-        </div>
-        <div>
-            <div style="font-weight: 800; font-size: 1.15rem; color: {T['text']}; letter-spacing: -0.02em;">CareFlow™</div>
-            <div style="font-size: 0.75rem; color: {T['text_muted']};">Clinical Process Mining</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
     
-    st.markdown(f"""
-    <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;'>
-        <span style='font-size: 0.75rem; font-weight: 700; color: {T['text_muted']}; text-transform: uppercase; letter-spacing: 0.08em;'>🧬 Pathway Hierarchy</span>
-        <span style='font-size: 0.68rem; color: #0284C7; font-weight: 600;'>Click to view stage</span>
-    </div>
-    """, unsafe_allow_html=True)
-
-    STAGE_NAV_MAPPING = {
-        act: f"{STAGE_METADATA.get(act, {}).get('icon', '📍')} {STAGE_METADATA.get(act, {}).get('step', i+1)}. {act}"
-        for i, act in enumerate(all_activities)
-    }
-
-    for i, act in enumerate(all_activities, 1):
-        meta = STAGE_METADATA.get(act, {"icon": "📍", "color": "#0284C7", "step": i})
-        target_subtab = STAGE_NAV_MAPPING[act]
-        is_current_active = (
-            st.session_state.get("dashboard_main_tabs") == "🔬 Stage Intelligence" and
-            st.session_state.get("stage_subtabs") == target_subtab
-        )
-        btn_type = "primary" if is_current_active else "secondary"
-        if st.button(
-            f"{i}. {meta['icon']} {act}",
-            key=f"sidebar_hierarchy_btn_{act}",
-            use_container_width=True,
-            type=btn_type,
-            help=f"Navigate directly to {act} (Stage {i}) tab"
-        ):
-            st.session_state["dashboard_main_tabs"] = "🔬 Stage Intelligence"
-            st.session_state["stage_subtabs"] = target_subtab
-            st.session_state["pathway_stage_select"] = activity_labels.get(act, f"{i}. {meta['icon']} {act}")
-            st.session_state["toast_message"] = f"🔬 Navigated to Stage {i}: {act} Intelligence & Patient Flow!"
+    col_sb_logo, col_sb_theme = st.columns([2.3, 1.7])
+    with col_sb_logo:
+        st.markdown(f"""
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+            <div style="background: linear-gradient(135deg, #0284C7, #4F46E5); width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+            </div>
+            <div>
+                <div style="font-weight: 800; font-size: 1.1rem; color: {T['text']}; letter-spacing: -0.02em;">CareFlow™</div>
+                <div style="font-size: 0.7rem; color: {T['text_muted']};">Clinical Mining</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col_sb_theme:
+        dark_toggle = st.toggle("🌙 Dark", value=is_dark, key="careflow_dark_mode_switch", help="Toggle between Light and Dark background")
+        if dark_toggle != is_dark:
+            st.session_state["theme_mode"] = "dark" if dark_toggle else "light"
             st.rerun()
+
+    with st.container(border=True):
+        st.markdown(f"""
+        <div id="careflow-pathway-marker" style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid {T['pathway_border_top']};'>
+            <span style='font-size: 0.74rem; font-weight: 800; color: {T['text']}; text-transform: uppercase; letter-spacing: 0.08em;'>🧬 Pathway Hierarchy</span>
+            <span style='font-size: 0.65rem; color: #0284C7; font-weight: 700; background: {T['tag_bg']}; padding: 2px 7px; border-radius: 9999px; border: 1px solid {T['tag_border']};'>5 Stages</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        STAGE_NAV_MAPPING = {
+            act: f"{STAGE_METADATA.get(act, {}).get('icon', '📍')} {STAGE_METADATA.get(act, {}).get('step', i+1)}. {act}"
+            for i, act in enumerate(all_activities)
+        }
+
+        for i, act in enumerate(all_activities, 1):
+            meta = STAGE_METADATA.get(act, {"icon": "📍", "color": "#0284C7", "step": i})
+            target_subtab = STAGE_NAV_MAPPING[act]
+            is_current_active = (
+                st.session_state.get("dashboard_main_tabs") == "🔬 Stage Intelligence" and
+                st.session_state.get("stage_subtabs") == target_subtab
+            )
+            btn_type = "primary" if is_current_active else "secondary"
+            if st.button(
+                f"{i}. {meta['icon']} {act}",
+                key=f"sidebar_hierarchy_btn_{act}",
+                use_container_width=True,
+                type=btn_type,
+                help=f"Navigate directly to {act} (Stage {i}) tab"
+            ):
+                st.session_state["dashboard_main_tabs"] = "🔬 Stage Intelligence"
+                st.session_state["stage_subtabs"] = target_subtab
+                st.session_state["pathway_stage_select"] = activity_labels.get(act, f"{i}. {meta['icon']} {act}")
+                st.session_state["toast_message"] = f"🔬 Navigated to Stage {i}: {act} Intelligence & Patient Flow!"
+                st.rerun()
         
     st.divider()
     notif_sidebar_label = "🔔 Live Alerts: Active" if st.session_state.get("notifications_enabled", True) else "🔕 Live Alerts: Muted"
@@ -930,106 +1143,105 @@ st.markdown(f"""
 # ---------------------------------------------------------
 # Dedicated Top Control Hub: Filters Arranged in Proper Manner
 # ---------------------------------------------------------
-st.markdown(f"""
-<div class="filter-panel">
-    <div class="filter-title">
-        <span>🎛️ Pathway Filtering & Cohort Selection</span>
-        <span style="font-size: 0.75rem; font-weight: 600; color: {'#38BDF8' if is_dark else '#0284C7'}; margin-left: auto;">
+with st.container(border=True):
+    st.markdown(f"""
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid {T['pathway_border_top']};">
+        <span style="font-size: 0.95rem; font-weight: 700; color: {T['text']}; display: flex; align-items: center; gap: 8px;">
+            <span>🎛️ Pathway Filtering & Cohort Selection</span>
+        </span>
+        <span style="font-size: 0.75rem; font-weight: 600; color: {'#38BDF8' if is_dark else '#0284C7'};">
             Arranged chronologically by clinical pathway order
         </span>
     </div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-filter_col1, filter_col2, filter_col3 = st.columns([1, 1.25, 1.45])
+    filter_col1, filter_col2, filter_col3 = st.columns([1, 1.25, 1.45])
 
-with filter_col1:
-    selected_date_str = st.selectbox(
-        "📅 1. Clinical Date",
-        options=date_options,
-        index=0,
-        help="Filter pathway events by date"
-    )
+    with filter_col1:
+        selected_date_str = st.selectbox(
+            "📅 1. Clinical Date",
+            options=date_options,
+            index=0,
+            help="Filter pathway events by date"
+        )
 
-with filter_col2:
-    ALL_PATIENTS_LABEL = "👥 All Patients (Cohort P001 - P006)"
-    patient_cohort_options = [ALL_PATIENTS_LABEL] + [f"👤 Case {p}" for p in all_patients]
-    
-    if "patient_cohort_select" not in st.session_state or st.session_state["patient_cohort_select"] not in patient_cohort_options:
-        st.session_state["patient_cohort_select"] = ALL_PATIENTS_LABEL
-
-    selected_patient_choice = st.selectbox(
-        "👥 2. Patient Cohort",
-        options=patient_cohort_options,
-        key="patient_cohort_select",
-        help="Select All Patients (Cohort P001 - P006) or an individual case to filter pathway analysis"
-    )
-
-    if selected_patient_choice == ALL_PATIENTS_LABEL:
-        selected_patients = list(all_patients)
-    else:
-        selected_patients = [selected_patient_choice.replace("👤 Case ", "")]
-
-with filter_col3:
-    ALL_ACTIVITIES_LABEL = "🔄 All Stages (Steps 1 to 5)"
-    pathway_options = [ALL_ACTIVITIES_LABEL] + [activity_labels[act] for act in all_activities]
-
-    if "pathway_stage_select" not in st.session_state or st.session_state["pathway_stage_select"] not in pathway_options:
-        st.session_state["pathway_stage_select"] = ALL_ACTIVITIES_LABEL
-
-    selected_activity_choice = st.selectbox(
-        "🔄 3. Pathway Sequence",
-        options=pathway_options,
-        key="pathway_stage_select",
-        help="Select All Stages (Steps 1 to 5) or an individual pathway stage to inspect transitions"
-    )
-
-    if selected_activity_choice == ALL_ACTIVITIES_LABEL:
-        selected_activities = list(all_activities)
-    else:
-        selected_activities = [reverse_activity_labels[selected_activity_choice]]
-
-    if selected_activity_choice == ALL_ACTIVITIES_LABEL:
-        selected_activities = list(all_activities)
-    else:
-        selected_activities = [reverse_activity_labels[selected_activity_choice]]
-
-# Interactive visual sequential pipeline ribbon
-ribbon_html = '<div class="pathway-ribbon">'
-ribbon_html += f'<span style="font-size: 0.75rem; font-weight: 700; color: {T["text_muted"]}; text-transform: uppercase; margin-right: 6px;">Active Pathway:</span>'
-
-for i, act in enumerate(all_activities):
-    meta = STAGE_METADATA.get(act, {"icon": "📍", "color": "#0284C7"})
-    is_active = act in selected_activities
-    
-    if is_active:
-        node_style = f"background: {T['node_active_bg']}; border: 1.5px solid {meta['color']}; color: {T['text']}; box-shadow: 0 2px 8px {meta['color']}20;"
-    else:
-        node_style = f"background: {T['inactive_node_bg']}; border: 1px dashed {T['inactive_node_border']}; color: {T['text_faint']}; opacity: 0.6;"
+    with filter_col2:
+        ALL_PATIENTS_LABEL = f"👥 All Patients ({len(all_patients)} Cases: {all_patients[0]} - {all_patients[-1]})"
+        patient_cohort_options = [ALL_PATIENTS_LABEL] + [f"👤 Case {p}" for p in all_patients]
         
-    ribbon_html += f'<span class="pathway-node" style="{node_style}">{meta["icon"]} {meta.get("step", i+1)}. {act}</span>'
-    
-    if i < len(all_activities) - 1:
-        arrow_color = "#38BDF8" if is_dark and is_active and (all_activities[i+1] in selected_activities) else ("#0284C7" if is_active and (all_activities[i+1] in selected_activities) else T['inactive_node_border'])
-        ribbon_html += f'<span class="pathway-arrow" style="color: {arrow_color};">➔</span>'
+        # Handle reset signal from Alert Center dialog
+        if st.session_state.pop("reset_cohort_to_all", False):
+            st.session_state["patient_cohort_select"] = ALL_PATIENTS_LABEL
 
-ribbon_html += '</div>'
-st.markdown(ribbon_html, unsafe_allow_html=True)
+        if "patient_cohort_select" not in st.session_state or st.session_state["patient_cohort_select"] not in patient_cohort_options:
+            st.session_state["patient_cohort_select"] = ALL_PATIENTS_LABEL
 
-col_rib_lbl, col_r1, col_r2, col_r3, col_r4, col_r5 = st.columns([0.85, 1, 1, 1.15, 1, 1])
-with col_rib_lbl:
-    st.markdown(f"<div style='font-size: 0.76rem; font-weight: 700; color: {T['text_muted']}; text-transform: uppercase; margin-top: 8px;'>Jump to Stage:</div>", unsafe_allow_html=True)
-for col, act in zip([col_r1, col_r2, col_r3, col_r4, col_r5], all_activities):
-    with col:
-        m = STAGE_METADATA.get(act, {"icon": "📍", "step": 1})
-        is_sub_act = (st.session_state.get("dashboard_main_tabs") == "🔬 Stage Intelligence" and st.session_state.get("stage_subtabs") == f"{m['icon']} {m['step']}. {act}")
-        if st.button(f"{m['icon']} {act}", key=f"ribbon_jump_{act}", use_container_width=True, type="primary" if is_sub_act else "secondary", help=f"View {act} stage analytics"):
-            st.session_state["dashboard_main_tabs"] = "🔬 Stage Intelligence"
-            st.session_state["stage_subtabs"] = f"{m['icon']} {m['step']}. {act}"
-            st.session_state["pathway_stage_select"] = activity_labels.get(act, f"{m['step']}. {m['icon']} {act}")
-            st.session_state["toast_message"] = f"🔬 Navigated to Stage {m['step']}: {act} Intelligence Tab!"
-            st.rerun()
+        selected_patient_choice = st.selectbox(
+            "👥 2. Patient Cohort",
+            options=patient_cohort_options,
+            key="patient_cohort_select",
+            help=f"Select All Patients ({len(all_patients)} Cases) or an individual case to filter pathway analysis"
+        )
 
-st.markdown("</div>", unsafe_allow_html=True)
+        if selected_patient_choice == ALL_PATIENTS_LABEL or selected_patient_choice.startswith("👥 All Patients"):
+            selected_patients = list(all_patients)
+        else:
+            selected_patients = [selected_patient_choice.replace("👤 Case ", "")]
+
+    with filter_col3:
+        ALL_ACTIVITIES_LABEL = "🔄 All Stages (Steps 1 to 5)"
+        pathway_options = [ALL_ACTIVITIES_LABEL] + [activity_labels[act] for act in all_activities]
+
+        if "pathway_stage_select" not in st.session_state or st.session_state["pathway_stage_select"] not in pathway_options:
+            st.session_state["pathway_stage_select"] = ALL_ACTIVITIES_LABEL
+
+        selected_activity_choice = st.selectbox(
+            "🔄 3. Pathway Sequence",
+            options=pathway_options,
+            key="pathway_stage_select",
+            help="Select All Stages (Steps 1 to 5) or an individual pathway stage to inspect transitions"
+        )
+
+        if selected_activity_choice == ALL_ACTIVITIES_LABEL:
+            selected_activities = list(all_activities)
+        else:
+            selected_activities = [reverse_activity_labels[selected_activity_choice]]
+
+    # Interactive visual sequential pipeline ribbon
+    ribbon_html = '<div class="pathway-ribbon">'
+    ribbon_html += f'<span style="font-size: 0.75rem; font-weight: 700; color: {T["text_muted"]}; text-transform: uppercase; margin-right: 6px;">Active Pathway:</span>'
+
+    for i, act in enumerate(all_activities):
+        meta = STAGE_METADATA.get(act, {"icon": "📍", "color": "#0284C7"})
+        is_active = act in selected_activities
+        
+        if is_active:
+            node_style = f"background: {T['node_active_bg']}; border: 1.5px solid {meta['color']}; color: {T['text']}; box-shadow: 0 2px 8px {meta['color']}20;"
+        else:
+            node_style = f"background: {T['inactive_node_bg']}; border: 1px dashed {T['inactive_node_border']}; color: {T['text_faint']}; opacity: 0.6;"
+            
+        ribbon_html += f'<span class="pathway-node" style="{node_style}">{meta["icon"]} {meta.get("step", i+1)}. {act}</span>'
+        
+        if i < len(all_activities) - 1:
+            arrow_color = "#38BDF8" if is_dark and is_active and (all_activities[i+1] in selected_activities) else ("#0284C7" if is_active and (all_activities[i+1] in selected_activities) else T['inactive_node_border'])
+            ribbon_html += f'<span class="pathway-arrow" style="color: {arrow_color};">➔</span>'
+
+    ribbon_html += '</div>'
+    st.markdown(ribbon_html, unsafe_allow_html=True)
+
+    col_rib_lbl, col_r1, col_r2, col_r3, col_r4, col_r5 = st.columns([0.85, 1, 1, 1.15, 1, 1])
+    with col_rib_lbl:
+        st.markdown(f"<div style='font-size: 0.76rem; font-weight: 700; color: {T['text_muted']}; text-transform: uppercase; margin-top: 8px;'>Jump to Stage:</div>", unsafe_allow_html=True)
+    for col, act in zip([col_r1, col_r2, col_r3, col_r4, col_r5], all_activities):
+        with col:
+            m = STAGE_METADATA.get(act, {"icon": "📍", "step": 1})
+            is_sub_act = (st.session_state.get("dashboard_main_tabs") == "🔬 Stage Intelligence" and st.session_state.get("stage_subtabs") == f"{m['icon']} {m['step']}. {act}")
+            if st.button(f"{m['icon']} {act}", key=f"ribbon_jump_{act}", use_container_width=True, type="primary" if is_sub_act else "secondary", help=f"View {act} stage analytics"):
+                st.session_state["dashboard_main_tabs"] = "🔬 Stage Intelligence"
+                st.session_state["stage_subtabs"] = f"{m['icon']} {m['step']}. {act}"
+                st.session_state["pathway_stage_select"] = activity_labels.get(act, f"{m['step']}. {m['icon']} {act}")
+                st.session_state["toast_message"] = f"🔬 Navigated to Stage {m['step']}: {act} Intelligence Tab!"
+                st.rerun()
 
 # ---------------------------------------------------------
 # Apply Filters to Dataframe
@@ -1072,8 +1284,8 @@ if len(selected_patients) == 1:
                 st.rerun()
         with col_focus_btn:
             if st.button("🔄 Show All Patients", key="reset_focus_patient_btn", use_container_width=True):
-                st.session_state["patient_cohort_select"] = "👥 All Patients (Cohort P001 - P006)"
-                st.session_state["toast_message"] = "🔄 Cohort filter reset: Showing all 6 patients."
+                st.session_state["patient_cohort_select"] = ALL_PATIENTS_LABEL
+                st.session_state["toast_message"] = f"🔄 Cohort filter reset: Showing all {len(all_patients)} patients."
                 st.rerun()
 
 # ---------------------------------------------------------
@@ -1404,6 +1616,7 @@ with tab_timeline:
             
         if not filtered_df.empty:
             sorted_patients_in_data = [p for p in all_patients if p in filtered_df["case_id"].unique()]
+            chart_height = max(420, min(1400, len(sorted_patients_in_data) * 26 + 100))
             fig_timeline = go.Figure()
             
             if timeline_mode == "⏱️ Aligned Elapsed Time (T+0 to T+140m)":
@@ -1445,7 +1658,7 @@ with tab_timeline:
                     plot_bgcolor=T['card_bg'],
                     font=dict(family="Plus Jakarta Sans, sans-serif", color=T['plot_font'], size=12),
                     margin=dict(l=20, r=20, t=35, b=40),
-                    height=440,
+                    height=chart_height,
                     xaxis=dict(
                         title=dict(text="Elapsed Minutes from Patient Arrival (T = 0 mins)", font=dict(color=T['text_muted'])),
                         gridcolor=T['grid_color'],
@@ -1512,7 +1725,7 @@ with tab_timeline:
                     plot_bgcolor=T['card_bg'],
                     font=dict(family="Plus Jakarta Sans, sans-serif", color=T['plot_font'], size=12),
                     margin=dict(l=20, r=20, t=35, b=40),
-                    height=440,
+                    height=chart_height,
                     xaxis=dict(
                         title=dict(text="Hospital Clock Timeline (Date & Hour)", font=dict(color=T['text_muted'])),
                         gridcolor=T['grid_color'],
@@ -1722,7 +1935,7 @@ with tab_stages:
 
             # Stage Header Card
             st.markdown(f"""
-            <div class="glass-card" style="padding: 18px 22px; margin-bottom: 18px; border-left: 5px solid {meta['color']};">
+            <div class="glass-card" style="padding: 18px 22px; margin-bottom: 18px; border-left: 5px solid {meta['color']}; background: linear-gradient(135deg, {T['card_bg']} 0%, {meta['color']}{'22' if is_dark else '12'} 100%);">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
                     <div>
                         <div style="display: flex; align-items: center; gap: 8px;">
