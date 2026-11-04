@@ -641,11 +641,10 @@ def show_clinical_alerts_dialog():
     st.markdown("<hr style='margin: 14px 0; border-color: #E2E8F0;'>", unsafe_allow_html=True)
     c_rst, c_test_tst = st.columns(2)
     with c_rst:
-        all_pts = ["👤 Case P001", "👤 Case P002", "👤 Case P003", "👤 Case P004", "👤 Case P005", "👤 Case P006"]
-        if st.button("🔄 Reset View to All 6 Patients", key="alert_reset_all_pts", use_container_width=True):
-            st.session_state["patient_cohort_select"] = "👥 All Patients (Cohort P001 - P006)"
-            st.session_state["patient_multiselect_key"] = all_pts
-            st.session_state["toast_message"] = "🔄 Cohort filter reset: Showing all 6 patients."
+        if st.button("🔄 Reset View to All Patients", key="alert_reset_all_pts", use_container_width=True):
+            st.session_state["reset_cohort_to_all"] = True
+            st.session_state.pop("patient_cohort_select", None)
+            st.session_state["toast_message"] = "🔄 Cohort filter reset: Showing all patients."
             st.rerun(scope="app")
     with c_test_tst:
         if st.button("🔔 Send Test Push Notification", key="alert_send_test", use_container_width=True):
