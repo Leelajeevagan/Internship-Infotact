@@ -5,6 +5,7 @@ from pathlib import Path
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
+import math
 import importlib
 import auth
 importlib.reload(auth)
@@ -29,12 +30,10 @@ if not st.session_state.get("authenticated", False):
     st.stop()
 
 # ---------------------------------------------------------
-# Theme System & Dynamic Design Palette
+# Theme System & Dynamic Design Palette (Light Clinical Theme)
 # ---------------------------------------------------------
-if "theme_mode" not in st.session_state:
-    st.session_state["theme_mode"] = "light"
-
-is_dark = (st.session_state["theme_mode"] == "dark")
+st.session_state["theme_mode"] = "light"
+is_dark = False
 
 THEMES = {
     "light": {
@@ -1011,26 +1010,19 @@ with st.sidebar:
     auth.render_user_sidebar()
     st.divider()
     
-    col_sb_logo, col_sb_theme = st.columns([2.3, 1.7])
-    with col_sb_logo:
-        st.markdown(f"""
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-            <div style="background: linear-gradient(135deg, #0284C7, #4F46E5); width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                </svg>
-            </div>
-            <div>
-                <div style="font-weight: 800; font-size: 1.1rem; color: {T['text']}; letter-spacing: -0.02em;">CareFlow™</div>
-                <div style="font-size: 0.7rem; color: {T['text_muted']};">Clinical Mining</div>
-            </div>
+    st.markdown(f"""
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+        <div style="background: linear-gradient(135deg, #0284C7, #4F46E5); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
         </div>
-        """, unsafe_allow_html=True)
-    with col_sb_theme:
-        dark_toggle = st.toggle("🌙 Dark", value=is_dark, key="careflow_dark_mode_switch", help="Toggle between Light and Dark background")
-        if dark_toggle != is_dark:
-            st.session_state["theme_mode"] = "dark" if dark_toggle else "light"
-            st.rerun()
+        <div>
+            <div style="font-weight: 800; font-size: 1.15rem; color: {T['text']}; letter-spacing: -0.02em;">CareFlow™</div>
+            <div style="font-size: 0.72rem; color: {T['text_muted']};">Clinical Process Mining</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     with st.container(border=True):
         st.markdown(f"""
@@ -1356,7 +1348,7 @@ with kpi_col3:
 with kpi_col4:
     amber_text_color = "#D97706"
     st.markdown(f"""
-    <div class="glass-card" style="margin-bottom: 8px;">
+    <div class="glass-card">
         <div class="kpi-title">🚨 Primary Bottleneck Delay</div>
         <div class="kpi-value" style="font-size: 1.55rem; color: {amber_text_color};">{bottleneck_label}</div>
         <div class="kpi-badge kpi-badge-amber">
@@ -1364,8 +1356,6 @@ with kpi_col4:
         </div>
     </div>
     """, unsafe_allow_html=True)
-    if st.button("🚨 View Alert Details", key="kpi_bottleneck_alert_btn", use_container_width=True):
-        auth.show_clinical_alerts_dialog()
 
 # ---------------------------------------------------------
 # Theme Color Palette Mapping for Activities
@@ -1593,181 +1583,207 @@ with tab_timeline:
     """, unsafe_allow_html=True)
     
     with st.container(border=True):
-        col_t_hdr1, col_t_hdr2 = st.columns([2.2, 1.8])
-        with col_t_hdr1:
+        sorted_patients_in_data = [p for p in all_patients if p in filtered_df["case_id"].unique()]
+        total_in_view = len(sorted_patients_in_data)
+        batch_size = 15
+        total_slides = max(1, math.ceil(total_in_view / batch_size))
+        
+        # Session state for current slideshow page
+        if "timeline_slide_idx" not in st.session_state:
+            st.session_state["timeline_slide_idx"] = 0
+            
+        # Ensure slide index is within valid bounds
+        if st.session_state["timeline_slide_idx"] >= total_slides:
+            st.session_state["timeline_slide_idx"] = max(0, total_slides - 1)
+        if st.session_state["timeline_slide_idx"] < 0:
+            st.session_state["timeline_slide_idx"] = 0
+            
+        cur_slide = st.session_state["timeline_slide_idx"]
+        start_idx = cur_slide * batch_size
+        end_idx = min(start_idx + batch_size, total_in_view)
+        display_patients = sorted_patients_in_data[start_idx:end_idx] if sorted_patients_in_data else []
+        
+        # Slideshow Navigation Header
+        col_t_title, col_t_ctrl = st.columns([1.85, 2.15])
+        with col_t_title:
             st.markdown(f"""
-            <div style="font-weight: 700; font-size: 1.05rem; color: {T['text']};">
-                📈 Cohort Trajectory Swimlanes
+            <div style="font-weight: 800; font-size: 1.08rem; color: {T['text']}; display: flex; align-items: center; gap: 8px;">
+                <span>🎞️ Patient Journey Trajectory Slideshow</span>
             </div>
-            <div style="font-size: 0.82rem; color: {T['text_muted']};">
-                Select between normalized elapsed time from arrival or calendar clock-time progression.
+            <div style="font-size: 0.82rem; color: {T['text_muted']}; margin-top: 2px;">
+                Displaying <strong>15 patients per slide</strong> aligned from arrival (T = 0 mins). Click <strong>Next</strong> to view the next 15 cases.
             </div>
             """, unsafe_allow_html=True)
-        with col_t_hdr2:
-            timeline_mode = st.radio(
-                "Timeline Display Mode",
-                [
-                    "⏱️ Aligned Elapsed Time (T+0 to T+140m)",
-                    "📅 Calendar Clock Time (By Date)"
-                ],
-                horizontal=True,
-                label_visibility="collapsed"
-            )
             
-        if not filtered_df.empty:
-            sorted_patients_in_data = [p for p in all_patients if p in filtered_df["case_id"].unique()]
-            chart_height = max(420, min(1400, len(sorted_patients_in_data) * 26 + 100))
+        with col_t_ctrl:
+            if total_slides > 1:
+                col_btn_prev, col_badge, col_btn_next = st.columns([1.1, 2.0, 1.1])
+                with col_btn_prev:
+                    if st.button("◀ Prev 15", key="btn_timeline_prev", disabled=(cur_slide <= 0), use_container_width=True):
+                        st.session_state["timeline_slide_idx"] = max(0, cur_slide - 1)
+                        st.rerun()
+                with col_badge:
+                    st.markdown(f"""
+                    <div style="text-align: center; background: #F1F5F9; border: 1.5px solid #CBD5E1; border-radius: 10px; padding: 6px 8px;">
+                        <span style="font-weight: 800; font-size: 0.88rem; color: #0284C7;">Slide {cur_slide + 1} of {total_slides}</span>
+                        <div style="font-size: 0.72rem; color: #64748B; font-weight: 600;">Cases {display_patients[0]} – {display_patients[-1]} ({len(display_patients)} pts)</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with col_btn_next:
+                    if st.button("Next 15 ▶", key="btn_timeline_next", disabled=(cur_slide >= total_slides - 1), type="primary", use_container_width=True):
+                        st.session_state["timeline_slide_idx"] = min(total_slides - 1, cur_slide + 1)
+                        st.rerun()
+            else:
+                st.markdown(f"""
+                <div style="text-align: right; margin-top: 6px;">
+                    <span style="background: #E0F2FE; border: 1px solid #BAE6FD; color: #0284C7; font-weight: 700; font-size: 0.8rem; padding: 6px 14px; border-radius: 9999px;">
+                        Showing {total_in_view} Patient Trajectories
+                    </span>
+                </div>
+                """, unsafe_allow_html=True)
+
+        # Quick Slide Jump Buttons (Slide 1, Slide 2, Slide 3...)
+        if total_slides > 1:
+            st.markdown("<div style='margin-top: 6px; margin-bottom: 8px;'></div>", unsafe_allow_html=True)
+            jump_cols = st.columns(total_slides)
+            for s_idx, col_j in enumerate(jump_cols):
+                with col_j:
+                    s_start = s_idx * batch_size
+                    s_end = min(s_start + batch_size, total_in_view)
+                    is_active_slide = (s_idx == cur_slide)
+                    if st.button(
+                        f"Slide {s_idx + 1}",
+                        key=f"jump_slide_btn_{s_idx}",
+                        type="primary" if is_active_slide else "secondary",
+                        use_container_width=True,
+                        help=f"Jump directly to Slide {s_idx + 1}: Cases {sorted_patients_in_data[s_start]} – {sorted_patients_in_data[s_end-1]}"
+                    ):
+                        st.session_state["timeline_slide_idx"] = s_idx
+                        st.rerun()
+            
+        if not filtered_df.empty and display_patients:
+            chart_height = max(450, len(display_patients) * 40 + 130)
             fig_timeline = go.Figure()
             
-            if timeline_mode == "⏱️ Aligned Elapsed Time (T+0 to T+140m)":
-                for patient in sorted_patients_in_data:
-                    p_data = filtered_df[filtered_df["case_id"] == patient].sort_values("elapsed_minutes")
+            # 1. Background Connecting Horizontal Swimlane Track for each patient
+            for patient in display_patients:
+                p_data = filtered_df[filtered_df["case_id"] == patient].sort_values("elapsed_minutes")
+                if not p_data.empty:
                     fig_timeline.add_trace(go.Scatter(
                         x=p_data["elapsed_minutes"],
-                        y=p_data["case_id"],
+                        y=[f"👤 Case {patient}"] * len(p_data),
                         mode="lines",
-                        line=dict(color="rgba(148, 163, 184, 0.45)", width=2.5, dash="dot"),
+                        line=dict(color="#94A3B8" if not is_dark else "#475569", width=3.5),
                         hoverinfo="skip",
                         showlegend=False
                     ))
-                
-                for act in all_activities:
-                    act_subset = filtered_df[filtered_df["activity"] == act]
-                    if not act_subset.empty:
-                        meta = STAGE_METADATA.get(act, {"icon": "📍", "color": "#0284C7"})
-                        fig_timeline.add_trace(go.Scatter(
-                            x=act_subset["elapsed_minutes"],
-                            y=act_subset["case_id"],
-                            mode="markers+text",
-                            name=f"{meta['icon']} {act}",
-                            marker=dict(
-                                size=16,
-                                color=meta["color"],
-                                line=dict(color=T['card_bg'], width=2),
-                                symbol="circle"
-                            ),
-                            text=[f"+{int(m)}m" for m in act_subset["elapsed_minutes"]],
-                            textposition="top center",
-                            textfont=dict(size=10, color=T['plot_font'], family="Plus Jakarta Sans"),
-                            customdata=act_subset[["activity", "time_str", "elapsed_minutes"]],
-                            hovertemplate="<b>Patient:</b> %{y}<br><b>Milestone:</b> %{customdata[0]}<br><b>Elapsed Time:</b> T+%{customdata[2]:.0f} mins<br><b>Clock Time:</b> %{customdata[1]}<extra></extra>"
-                        ))
-                
-                fig_timeline.update_layout(
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    plot_bgcolor=T['card_bg'],
-                    font=dict(family="Plus Jakarta Sans, sans-serif", color=T['plot_font'], size=12),
-                    margin=dict(l=20, r=20, t=35, b=40),
-                    height=chart_height,
-                    xaxis=dict(
-                        title=dict(text="Elapsed Minutes from Patient Arrival (T = 0 mins)", font=dict(color=T['text_muted'])),
-                        gridcolor=T['grid_color'],
-                        zeroline=True,
-                        zerolinecolor=T['zero_line'],
-                        dtick=20,
-                        range=[-5, 155]
-                    ),
-                    yaxis=dict(
-                        title=dict(text="Patient Cohort Case", font=dict(color=T['text_muted'])),
-                        gridcolor=T['grid_color'],
-                        categoryorder="array",
-                        categoryarray=list(reversed(sorted_patients_in_data))
-                    ),
-                    legend=dict(
-                        orientation="h",
-                        yanchor="bottom",
-                        y=1.04,
-                        xanchor="right",
-                        x=1,
-                        bgcolor=T['legend_bg'],
-                        bordercolor=T['legend_border'],
-                        borderwidth=1,
-                        font=dict(color=T['text'])
-                    )
-                )
-                
-            else:
-                for patient in sorted_patients_in_data:
-                    p_data = filtered_df[filtered_df["case_id"] == patient].sort_values("timestamp")
+            
+            # 2. Stage Milestones
+            for act in all_activities:
+                act_subset = filtered_df[(filtered_df["case_id"].isin(display_patients)) & (filtered_df["activity"] == act)]
+                if not act_subset.empty:
+                    meta = STAGE_METADATA.get(act, {"icon": "📍", "color": "#0284C7"})
                     fig_timeline.add_trace(go.Scatter(
-                        x=p_data["timestamp"],
-                        y=p_data["case_id"],
-                        mode="lines",
-                        line=dict(color="rgba(148, 163, 184, 0.45)", width=2.5, dash="dot"),
-                        hoverinfo="skip",
-                        showlegend=False
+                        x=act_subset["elapsed_minutes"],
+                        y=[f"👤 Case {p}" for p in act_subset["case_id"]],
+                        mode="markers+text",
+                        name=f"{meta['icon']} {act}",
+                        marker=dict(
+                            size=18,
+                            color=meta["color"],
+                            line=dict(color="#FFFFFF", width=2.5),
+                            symbol="circle"
+                        ),
+                        text=[f"+{int(m)}m" if m > 0 else "0m" for m in act_subset["elapsed_minutes"]],
+                        textposition="top center",
+                        textfont=dict(size=10, color=T['plot_font'], family="Plus Jakarta Sans", weight=700),
+                        customdata=act_subset[["activity", "time_str", "elapsed_minutes", "case_id"]],
+                        hovertemplate="<b>Patient Case %{customdata[3]}</b><br>Stage: %{name}<br>Elapsed Time: <b>%{x:.0f} mins</b> from arrival<br>Clock Timestamp: %{customdata[1]}<extra></extra>"
                     ))
-                    
-                for act in all_activities:
-                    act_subset = filtered_df[filtered_df["activity"] == act]
-                    if not act_subset.empty:
-                        meta = STAGE_METADATA.get(act, {"icon": "📍", "color": "#0284C7"})
-                        fig_timeline.add_trace(go.Scatter(
-                            x=act_subset["timestamp"],
-                            y=act_subset["case_id"],
-                            mode="markers+text",
-                            name=f"{meta['icon']} {act}",
-                            marker=dict(
-                                size=16,
-                                color=meta["color"],
-                                line=dict(color=T['card_bg'], width=2),
-                                symbol="circle"
-                            ),
-                            text=act_subset["time_str"],
-                            textposition="top center",
-                            textfont=dict(size=10, color=T['plot_font'], family="Plus Jakarta Sans"),
-                            customdata=act_subset[["activity", "time_str"]],
-                            hovertemplate="<b>Patient:</b> %{y}<br><b>Milestone:</b> %{customdata[0]}<br><b>Clock Time:</b> %{x|%Y-%m-%d %H:%M}<extra></extra>"
-                        ))
-                        
-                fig_timeline.update_layout(
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    plot_bgcolor=T['card_bg'],
-                    font=dict(family="Plus Jakarta Sans, sans-serif", color=T['plot_font'], size=12),
-                    margin=dict(l=20, r=20, t=35, b=40),
-                    height=chart_height,
-                    xaxis=dict(
-                        title=dict(text="Hospital Clock Timeline (Date & Hour)", font=dict(color=T['text_muted'])),
-                        gridcolor=T['grid_color'],
-                        zeroline=False
-                    ),
-                    yaxis=dict(
-                        title=dict(text="Patient Cohort Case", font=dict(color=T['text_muted'])),
-                        gridcolor=T['grid_color'],
-                        categoryorder="array",
-                        categoryarray=list(reversed(sorted_patients_in_data))
-                    ),
-                    legend=dict(
-                        orientation="h",
-                        yanchor="bottom",
-                        y=1.04,
-                        xanchor="right",
-                        x=1,
-                        bgcolor=T['legend_bg'],
-                        bordercolor=T['legend_border'],
-                        borderwidth=1,
-                        font=dict(color=T['text'])
-                    )
+            
+            # 3. Dynamic X-Axis boundary and Benchmark Line
+            max_elapsed_val = filtered_df[filtered_df["case_id"].isin(display_patients)]["elapsed_minutes"].max()
+            x_upper = max(175.0, float(max_elapsed_val) + 20.0) if pd.notnull(max_elapsed_val) else 175.0
+            
+            # SLA Target Line (120m)
+            fig_timeline.add_vline(
+                x=target_los,
+                line_width=2,
+                line_dash="dash",
+                line_color="#E11D48",
+                annotation_text="🎯 Target SLA 120m",
+                annotation_position="top right",
+                annotation_font=dict(size=11, color="#E11D48", family="Plus Jakarta Sans", weight=700),
+                annotation_bgcolor="rgba(254, 242, 242, 0.95)"
+            )
+            
+            fig_timeline.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor=T['card_bg'],
+                font=dict(family="Plus Jakarta Sans, sans-serif", color=T['plot_font'], size=12),
+                margin=dict(l=100, r=30, t=35, b=45),
+                height=chart_height,
+                xaxis=dict(
+                    title=dict(text="Normalized Clinical Duration from Arrival (Minutes Elapsed at T = 0 mins)", font=dict(color=T['text_muted'], size=12)),
+                    gridcolor=T['grid_color'],
+                    zeroline=True,
+                    zerolinecolor=T['zero_line'],
+                    zerolinewidth=2,
+                    dtick=20,
+                    range=[-8, x_upper]
+                ),
+                yaxis=dict(
+                    title=dict(text="Patient Trajectory Cases", font=dict(color=T['text_muted'])),
+                    gridcolor=T['grid_color'],
+                    categoryorder="array",
+                    categoryarray=[f"👤 Case {p}" for p in reversed(display_patients)]
+                ),
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.04,
+                    xanchor="right",
+                    x=1,
+                    bgcolor=T['legend_bg'],
+                    bordercolor=T['legend_border'],
+                    borderwidth=1,
+                    font=dict(color=T['text'])
                 )
-                
+            )
+            
             st.plotly_chart(fig_timeline, use_container_width=True, config={"displayModeBar": False})
         else:
             st.info("No timeline records match the current filters.")
             
     # Patient Journey Cohort Performance Summary Card
     with st.container(border=True):
-        st.markdown(f"""
-        <div style="font-weight: 700; font-size: 1rem; color: {T['text']}; margin-bottom: 2px;">
-            📋 Cohort Patient Journey Performance Audit
-        </div>
-        <div style="font-size: 0.8rem; color: {T['text_muted']}; margin-bottom: 14px;">
-            Individual arrival, discharge, journey dwell duration, and SLA compliance metrics.
-        </div>
-        """, unsafe_allow_html=True)
+        col_tbl_hdr, col_tbl_scope = st.columns([2.5, 1.5])
+        with col_tbl_hdr:
+            st.markdown(f"""
+            <div style="font-weight: 700; font-size: 1rem; color: {T['text']}; margin-bottom: 2px;">
+                📋 Cohort Patient Journey Performance Audit
+            </div>
+            <div style="font-size: 0.8rem; color: {T['text_muted']};">
+                Individual arrival, discharge, journey dwell duration, and SLA compliance metrics.
+            </div>
+            """, unsafe_allow_html=True)
+        with col_tbl_scope:
+            if total_slides > 1:
+                tbl_scope = st.radio(
+                    "Audit Table Scope",
+                    [f"Current Slide ({len(display_patients)} pts)", f"All {total_in_view} Patients"],
+                    horizontal=True,
+                    label_visibility="collapsed",
+                    key="timeline_table_scope_radio"
+                )
+            else:
+                tbl_scope = "All"
+                
+        table_pts = display_patients if (total_slides > 1 and tbl_scope.startswith("Current")) else sorted_patients_in_data
         
         if not filtered_df.empty:
             summary_list = []
-            for patient in sorted_patients_in_data:
+            for patient in table_pts:
                 p_events = filtered_df[filtered_df["case_id"] == patient].sort_values("timestamp")
                 start_t = p_events["timestamp"].min()
                 end_t = p_events["timestamp"].max()
