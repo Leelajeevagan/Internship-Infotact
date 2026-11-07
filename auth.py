@@ -394,7 +394,7 @@ def render_user_sidebar():
     if not user:
         return
 
-    is_dark = st.session_state.get("theme_mode", "dark") == "dark"
+    is_dark = False
     card_bg = "#111827" if is_dark else "#FFFFFF"
     card_border = "#1E293B" if is_dark else "#E2E8F0"
     text_color = "#F1F5F9" if is_dark else "#0F172A"
