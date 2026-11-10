@@ -698,4 +698,4 @@ def render_user_header():
                 show_clinical_alerts_dialog()
         with c_btn:
             if st.button("Sign Out", key="single_signout_btn", use_container_width=True, type="secondary"):
-                
+                logout()
